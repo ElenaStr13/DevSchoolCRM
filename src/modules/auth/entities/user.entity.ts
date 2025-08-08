@@ -1,16 +1,20 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Token } from './token.entity';
 
 @Entity('users')
 export class User {
-    @PrimaryGeneratedColumn()
-    id: number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column()
-    email: string;
+  @Column()
+  email: string;
 
-    @Column()
-    password: string;
+  @Column()
+  password: string;
 
-    @Column({ default: 'manager' })
-    role: 'admin' | 'manager';
+  @Column({ default: 'manager' })
+  role: 'admin' | 'manager';
+
+  @OneToMany(() => Token, (token) => token.user)
+  tokens: Token[];
 }

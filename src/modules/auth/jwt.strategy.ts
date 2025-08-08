@@ -14,7 +14,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     @InjectRepository(Token)
     private readonly tokenRepository: Repository<Token>,
   ) {
-    const jwtSecret = configService.get<string>('JWT_SECRET') || '';
+    const jwtSecret = configService.get<string>('JWT_SECRET');
+
+    if (!jwtSecret) {
+      throw new Error('JWT_SECRET is not defined in environment variables');
+    }
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -23,20 +28,28 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: IJWTPayload) {
-    const tokenEntity = await this.tokenRepository.findOne({
-      where: { jti: payload.jti, isBlocked: false },
-      relations: ['user'],
-    });
+    try {
+      const tokenEntity = await this.tokenRepository.findOne({
+        where: { jti: payload.jti, isBlocked: false },
+        relations: ['user'],
+      });
 
-    if (!tokenEntity) {
-      throw new UnauthorizedException('Token is blocked or invalid');
+      if (!tokenEntity) {
+        throw new UnauthorizedException('Token is blocked or invalid');
+      }
+
+      const user = tokenEntity.user;
+
+      return {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Invalid token');
     }
-    const user = tokenEntity.user;
-
-    return {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-    };
   }
 }
