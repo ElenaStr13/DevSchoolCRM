@@ -8,8 +8,8 @@ import { TypeormModule } from './modules/typeorm/typeorm.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '.env',
     }),
-
     TypeormModule,
     AuthModule,
     ApplicationsModule,
