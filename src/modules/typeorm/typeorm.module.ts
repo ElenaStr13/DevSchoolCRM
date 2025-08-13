@@ -25,7 +25,7 @@ import { DatabaseConfig } from '../../configs/config.type';
           password: db?.password,
           database: db?.name,
           entities: [User, Token],
-          synchronize: false,
+          synchronize: true,
           autoLoadEntities: true,
         };
       },
