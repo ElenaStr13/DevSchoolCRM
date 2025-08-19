@@ -8,6 +8,6 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+    return this.authService.login(loginDto); // викликає метод authService.login(loginDto)
   }
 }

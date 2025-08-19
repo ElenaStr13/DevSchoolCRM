@@ -6,15 +6,24 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
+interface UserRequest {
+  user: {
+    role: string;
+    [key: string]: any; // інші властивості користувача, якщо потрібні
+  };
+}
+
 @Injectable()
 export class RolesGuard implements CanActivate {
+  //Отримує ролі з декоратора @Roles('admin', 'manager')
   constructor(private reflector: Reflector) {}
   canActivate(context: ExecutionContext): boolean {
     const roles = this.reflector.get<string[]>('roles', context.getHandler());
     if (!roles || roles.length === 0) {
+      //Порівнює з request.user.role
       return true; // якщо ролі не вказані, пропускаємо
     }
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<UserRequest>();
     const user = request.user;
     if (!user) {
       throw new ForbiddenException('User not found in request');
@@ -24,6 +33,6 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('Access denied');
     }
 
-    return true;
+    return true; //Якщо роль підходить → пропускає запит
   }
 }

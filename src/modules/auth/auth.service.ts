@@ -6,7 +6,8 @@ import { User } from './entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { ITokens } from './interfaces/token.interface';
 import { ConfigService } from '@nestjs/config';
-import { Token } from './entities/token.entity';
+import { Token, TokenType } from './entities/token.entity';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -28,9 +29,11 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto): Promise<ITokens> {
-    const user = await this.validateUser(loginDto.email, loginDto.password);
-    const jti = Math.random().toString(36).substring(10);
+    //Отримує loginDto з поштою і паролем
+    const user = await this.validateUser(loginDto.email, loginDto.password); // викликає щоб перевірити, чи є такий користувач і чи правильний пароль.
+    const jti = randomUUID(); //Генерує jti (унікальний ID токена)
     const payload = {
+      //Формує payload
       userId: user.id,
       email: user.email,
       role: user.role,
@@ -39,12 +42,15 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const accessToken = this.jwtService.sign(payload, {
+      //Створює accessToken
       expiresIn: `${this.accessTokenExpiresIn}s`,
     });
     const refreshToken = this.jwtService.sign(payload, {
+      //Створює  refreshToken
       expiresIn: `${this.refreshTokenExpiresIn}s`,
     });
     await this.saveTokens(
+      //Збереження токенів у БД
       user,
       accessToken,
       refreshToken,
@@ -54,8 +60,8 @@ export class AuthService {
     );
     await this.deleteExpiredTokens();
     return {
-      accessToken,
-      refreshToken,
+      accessToken, //повертається до користувача
+      refreshToken, //повертається до користувача
     };
   }
 
@@ -67,32 +73,40 @@ export class AuthService {
     refreshTokenExpiresIn: number,
     jti: string,
   ): Promise<void> {
-    const tokenEntity = this.tokenRepository.create({
-      accessToken,
-      refreshToken,
-      accessTokenExpiresAt: new Date(Date.now() + accessTokenExpiresIn * 1000),
-      refreshTokenExpiresAt: new Date(
-        Date.now() + refreshTokenExpiresIn * 1000,
-      ),
+    const accessTokenEntity = this.tokenRepository.create({
+      token: accessToken,
+      type: TokenType.ACCESS,
+      expiresAt: new Date(Date.now() + accessTokenExpiresIn * 1000),
       user,
       jti,
     });
-    await this.tokenRepository.save(tokenEntity);
+
+    const refreshTokenEntity = this.tokenRepository.create({
+      token: refreshToken,
+      type: TokenType.REFRESH,
+      expiresAt: new Date(Date.now() + refreshTokenExpiresIn * 1000),
+      user,
+      jti,
+    });
+
+    await this.tokenRepository.save([accessTokenEntity, refreshTokenEntity]);
   }
 
   private async validateUser(email: string, password: string): Promise<User> {
-    const user = await this.userRepo.findOneBy({ email });
+    //Дістає користувача з БД через
+    const user = await this.userRepo.findOneBy({ email }); //Викликає метод моделі user.validatePassword(password) (ймовірно, bcrypt.compare)
 
     if (!user || !(await user.validatePassword(password))) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Invalid credentials'); //Якщо користувача нема або пароль неправильний → кидає:
     }
     return user;
   }
 
   private async deleteExpiredTokens() {
+    //видаляє з таблиці ті записи, у яких refreshTokenExpiresAt
     const now = new Date();
     await this.tokenRepository.delete({
-      refreshTokenExpiresAt: LessThan(now),
+      expiresAt: LessThan(now),
     });
   }
 }

@@ -28,18 +28,20 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: IJWTPayload) {
+    //Розшифровує токен, отримує payload
     try {
       const tokenEntity = await this.tokenRepository.findOne({
-        where: { jti: payload.jti, isBlocked: false },
+        where: { jti: payload.jti, isBlocked: false }, //Шукає токен у таблиці tokens
         relations: ['user'],
       });
+      console.log('TOKEN ENTITY:', tokenEntity);
 
       if (!tokenEntity) {
-        throw new UnauthorizedException('Token is blocked or invalid');
+        throw new UnauthorizedException('Token is blocked or invalid'); //Якщо не знайдений або isBlocked = true → UnauthorizedException
       }
 
       const user = tokenEntity.user;
-
+      // Якщо знайдений → повертає { id, email, role }
       return {
         id: user.id,
         email: user.email,
