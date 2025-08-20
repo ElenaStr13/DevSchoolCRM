@@ -2,11 +2,11 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThan, Repository } from 'typeorm';
-import { User } from './entities/user.entity';
+import { UserEntity } from './entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { ITokens } from './interfaces/token.interface';
 import { ConfigService } from '@nestjs/config';
-import { Token, TokenType } from './entities/token.entity';
+import { TokenEntity } from './entities/token.entity';
 import { randomUUID } from 'crypto';
 
 @Injectable()
@@ -15,10 +15,10 @@ export class AuthService {
   private readonly refreshTokenExpiresIn: number;
 
   constructor(
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
-    @InjectRepository(Token)
-    private readonly tokenRepository: Repository<Token>,
+    @InjectRepository(UserEntity)
+    private readonly userRepo: Repository<UserEntity>,
+    @InjectRepository(TokenEntity)
+    private readonly tokenRepository: Repository<TokenEntity>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {
@@ -36,7 +36,7 @@ export class AuthService {
       //Формує payload
       userId: user.id,
       email: user.email,
-      role: user.role,
+      // role: user.role,
       jti,
     };
     if (!user) throw new UnauthorizedException('Invalid credentials');
@@ -66,38 +66,43 @@ export class AuthService {
   }
 
   private async saveTokens(
-    user: User,
+    user: UserEntity,
     accessToken: string,
     refreshToken: string,
     accessTokenExpiresIn: number,
     refreshTokenExpiresIn: number,
     jti: string,
   ): Promise<void> {
-    const accessTokenEntity = this.tokenRepository.create({
-      token: accessToken,
-      type: TokenType.ACCESS,
-      expiresAt: new Date(Date.now() + accessTokenExpiresIn * 1000),
+    const tokenEntity = this.tokenRepository.create({
+      accessToken,
+      refreshToken,
+      accessTokenExpiresAt: new Date(Date.now() + accessTokenExpiresIn * 1000),
+      refreshTokenExpiresAt: new Date(
+        Date.now() + refreshTokenExpiresIn * 1000,
+      ),
       user,
       jti,
     });
 
-    const refreshTokenEntity = this.tokenRepository.create({
-      token: refreshToken,
-      type: TokenType.REFRESH,
-      expiresAt: new Date(Date.now() + refreshTokenExpiresIn * 1000),
-      user,
-      jti,
-    });
-
-    await this.tokenRepository.save([accessTokenEntity, refreshTokenEntity]);
+    await this.tokenRepository.save(tokenEntity);
   }
 
-  private async validateUser(email: string, password: string): Promise<User> {
+  private async validateUser(
+    email: string,
+    password: string,
+  ): Promise<UserEntity> {
     //Дістає користувача з БД через
-    const user = await this.userRepo.findOneBy({ email }); //Викликає метод моделі user.validatePassword(password) (ймовірно, bcrypt.compare)
+    const user = await this.userRepo.findOne({
+      where: { email: 'admin@gmail.com' },
+      relations: ['tokens'],
+    }); //Викликає метод моделі user.validatePassword(password) (ймовірно, bcrypt.compare)
 
     if (!user || !(await user.validatePassword(password))) {
       throw new UnauthorizedException('Invalid credentials'); //Якщо користувача нема або пароль неправильний → кидає:
+    }
+    const isPasswordValid = await user.validatePassword(password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
     }
     return user;
   }
@@ -106,7 +111,7 @@ export class AuthService {
     //видаляє з таблиці ті записи, у яких refreshTokenExpiresAt
     const now = new Date();
     await this.tokenRepository.delete({
-      expiresAt: LessThan(now),
+      refreshTokenExpiresAt: LessThan(now),
     });
   }
 }

@@ -1,27 +1,27 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { User } from './user.entity';
+import { UserEntity } from './user.entity';
 
 export enum TokenType {
   ACCESS = 'access',
   REFRESH = 'refresh',
 }
 
-@Entity('tokens')
-export class Token {
+@Entity()
+export class TokenEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', length: 1000 })
-  token: string;
-
-  @Column({
-    type: 'enum',
-    enum: TokenType,
-  })
-  type: TokenType;
+  @Column()
+  accessToken: string;
 
   @Column()
-  expiresAt: Date;
+  refreshToken: string;
+
+  @Column()
+  accessTokenExpiresAt: Date;
+
+  @Column()
+  refreshTokenExpiresAt: Date;
 
   @Column({ default: false })
   isBlocked: boolean;
@@ -29,6 +29,6 @@ export class Token {
   @Column()
   jti: string;
 
-  @ManyToOne(() => User, (user) => user.tokens)
-  user: User;
+  @ManyToOne(() => UserEntity, (user) => user.tokens)
+  user: UserEntity;
 }

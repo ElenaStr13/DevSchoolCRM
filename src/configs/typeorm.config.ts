@@ -1,8 +1,8 @@
 import { DataSource } from 'typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './configuration';
-import { User } from '../modules/auth/entities/user.entity';
-import { Token } from '../modules/auth/entities/token.entity';
+import { UserEntity } from '../modules/auth/entities/user.entity';
+import { TokenEntity } from '../modules/auth/entities/token.entity';
 
 ConfigModule.forRoot({
   load: [configuration],
@@ -18,7 +18,7 @@ export default new DataSource({
   username: configService.get<string>('DB_USERNAME'),
   password: configService.get<string>('DB_PASSWORD'),
   database: configService.get<string>('DB_NAME'),
-  entities: [User, Token],
+  entities: [UserEntity, TokenEntity],
   migrations: [__dirname + '/../migrations/*{.ts,.js}'],
   synchronize: false, // !!! при міграціях треба вимикати
 });

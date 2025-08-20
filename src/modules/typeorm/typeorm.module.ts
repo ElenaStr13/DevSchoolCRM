@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { User } from '../auth/entities/user.entity';
-import { Token } from '../auth/entities/token.entity';
+import { UserEntity } from '../auth/entities/user.entity';
+import { TokenEntity } from '../auth/entities/token.entity';
 import configuration from '../../configs/configuration';
 import { DatabaseConfig } from '../../configs/config.type';
 
@@ -24,7 +24,7 @@ import { DatabaseConfig } from '../../configs/config.type';
           username: db?.user,
           password: db?.password,
           database: db?.name,
-          entities: [User, Token],
+          entities: [UserEntity, TokenEntity],
           synchronize: false,
           autoLoadEntities: true,
         };

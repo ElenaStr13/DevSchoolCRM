@@ -38,6 +38,6 @@ export class Application {
   @Column()
   alreadyPaid: number;
 
-  @Column()
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
 }
