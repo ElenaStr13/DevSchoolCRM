@@ -17,6 +17,8 @@
     "migration:generate": "npm run typeorm migration:generate ./src/migrations/$npm_config_name",
     "migration:run": "npm run typeorm migration:run",
     "migration:revert": "npm run typeorm migration:revert",
+    "seed:run": "npm run typeorm -- seeding:run",
+    "seed:manager": "ts-node src/seeds/create-manager.seed.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",

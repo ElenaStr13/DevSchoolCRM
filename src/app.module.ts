@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from './modules/auth/auth.module';
-import { ApplicationsModule } from './modules/applications/applications.module';
+import { OrdersModule } from './modules/orders/orders.module';
 import { ConfigModule } from '@nestjs/config';
 import { TypeormModule } from './modules/typeorm/typeorm.module';
 
@@ -12,7 +12,7 @@ import { TypeormModule } from './modules/typeorm/typeorm.module';
     }),
     TypeormModule,
     AuthModule,
-    ApplicationsModule,
+    OrdersModule,
   ],
   controllers: [],
   providers: [],

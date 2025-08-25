@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  BeforeInsert,
+} from 'typeorm';
 import { TokenEntity } from './token.entity';
 import * as bcrypt from 'bcrypt';
 
@@ -13,7 +19,7 @@ export class UserEntity {
   @Column()
   password: string;
 
-  @Column({ default: 'manager' })
+  @Column({ type: 'enum', enum: ['admin', 'manager'], default: 'manager' })
   role: 'admin' | 'manager';
 
   @OneToMany(() => TokenEntity, (token) => token.user)
@@ -21,5 +27,10 @@ export class UserEntity {
 
   async validatePassword(password: string): Promise<boolean> {
     return bcrypt.compare(password, this.password);
+  }
+
+  @BeforeInsert()
+  async hashPassword() {
+    this.password = await bcrypt.hash(this.password, 10);
   }
 }

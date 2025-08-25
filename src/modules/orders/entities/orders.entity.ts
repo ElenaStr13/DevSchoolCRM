@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity('orders')
-export class Application {
+export class OrdersEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -29,7 +29,7 @@ export class Application {
   @Column()
   course_type: string;
 
-  @Column()
+  @Column({ nullable: true })
   status: string;
 
   @Column()

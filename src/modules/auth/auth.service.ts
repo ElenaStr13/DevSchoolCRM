@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThan, Repository } from 'typeorm';
@@ -8,6 +12,10 @@ import { ITokens } from './interfaces/token.interface';
 import { ConfigService } from '@nestjs/config';
 import { TokenEntity } from './entities/token.entity';
 import { randomUUID } from 'crypto';
+import { CreateUserDto } from './dto/create-user.dto';
+import * as bcrypt from 'bcrypt';
+import { UserResponseDto } from './dto/user.response.dto';
+import { instanceToPlain, plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class AuthService {
@@ -36,7 +44,7 @@ export class AuthService {
       //Формує payload
       userId: user.id,
       email: user.email,
-      // role: user.role,
+      role: user.role,
       jti,
     };
     if (!user) throw new UnauthorizedException('Invalid credentials');
@@ -65,6 +73,94 @@ export class AuthService {
     };
   }
 
+  async register(
+    adminUser: UserEntity,
+    createUserDto: CreateUserDto,
+  ): Promise<UserEntity> {
+    // Перевірка, чи користувач адмін
+    if (adminUser.role !== 'admin') {
+      throw new ForbiddenException('Only admins can register new users');
+    }
+
+    // Перевірка, чи email вже існує
+    const existingUser = await this.userRepo.findOne({
+      where: { email: createUserDto.email },
+    });
+    if (existingUser) {
+      throw new ForbiddenException('User with this email already exists');
+    }
+
+    // Хешування пароля
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+
+    // Створення нового користувача
+    const newUser = this.userRepo.create({
+      email: createUserDto.email,
+      password: hashedPassword,
+      role: createUserDto.role, // manager, admin або інші ролі
+    });
+
+    return await this.userRepo.save(newUser);
+  }
+
+  async refresh(refreshToken: string): Promise<ITokens> {
+    try {
+      // Перевіряємо refreshToken
+      const payload = this.jwtService.verify(refreshToken);
+      const tokenEntity = await this.tokenRepository.findOne({
+        where: { refreshToken, isBlocked: false },
+        relations: ['user'],
+      });
+
+      if (!tokenEntity) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      // Новий jti
+      const jti = randomUUID();
+      const newPayload = {
+        userId: tokenEntity.user.id,
+        email: tokenEntity.user.email,
+        role: tokenEntity.user.role,
+        jti,
+      };
+
+      const newAccessToken = this.jwtService.sign(newPayload, {
+        expiresIn: `${this.accessTokenExpiresIn}s`,
+      });
+      const newRefreshToken = this.jwtService.sign(newPayload, {
+        expiresIn: `${this.refreshTokenExpiresIn}s`,
+      });
+
+      // Оновлюємо токени в БД
+      tokenEntity.accessToken = newAccessToken;
+      tokenEntity.refreshToken = newRefreshToken;
+      tokenEntity.accessTokenExpiresAt = new Date(
+        Date.now() + this.accessTokenExpiresIn * 1000,
+      );
+      tokenEntity.refreshTokenExpiresAt = new Date(
+        Date.now() + this.refreshTokenExpiresIn * 1000,
+      );
+      tokenEntity.jti = jti;
+
+      await this.tokenRepository.save(tokenEntity);
+
+      return {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+      };
+    } catch (e) {
+      throw new UnauthorizedException('Refresh token expired or invalid');
+    }
+  }
+
+  async me(userId: number): Promise<Partial<UserResponseDto> | null> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) return null;
+    const dto = plainToInstance(UserResponseDto, user);
+    return instanceToPlain(dto);
+  }
+
   private async saveTokens(
     user: UserEntity,
     accessToken: string,
@@ -82,8 +178,8 @@ export class AuthService {
       ),
       user,
       jti,
+      isBlocked: false,
     });
-
     await this.tokenRepository.save(tokenEntity);
   }
 
@@ -93,9 +189,9 @@ export class AuthService {
   ): Promise<UserEntity> {
     //Дістає користувача з БД через
     const user = await this.userRepo.findOne({
-      where: { email: 'admin@gmail.com' },
+      where: { email },
       relations: ['tokens'],
-    }); //Викликає метод моделі user.validatePassword(password) (ймовірно, bcrypt.compare)
+    }); //Викликає метод моделі user.validatePassword(password) (bcrypt.compare)
 
     if (!user || !(await user.validatePassword(password))) {
       throw new UnauthorizedException('Invalid credentials'); //Якщо користувача нема або пароль неправильний → кидає:

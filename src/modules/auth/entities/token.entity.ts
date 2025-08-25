@@ -6,15 +6,15 @@ export enum TokenType {
   REFRESH = 'refresh',
 }
 
-@Entity()
+@Entity('tokens')
 export class TokenEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ length: 512 })
   accessToken: string;
 
-  @Column()
+  @Column({ length: 512 })
   refreshToken: string;
 
   @Column()
