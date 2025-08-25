@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   UnauthorizedException,
@@ -76,7 +77,7 @@ export class AuthService {
   async register(
     adminUser: UserEntity,
     createUserDto: CreateUserDto,
-  ): Promise<UserEntity> {
+  ): Promise<UserResponseDto> {
     // Перевірка, чи користувач адмін
     if (adminUser.role !== 'admin') {
       throw new ForbiddenException('Only admins can register new users');
@@ -97,10 +98,11 @@ export class AuthService {
     const newUser = this.userRepo.create({
       email: createUserDto.email,
       password: hashedPassword,
-      role: createUserDto.role, // manager, admin або інші ролі
+      role: 'manager',
     });
-
-    return await this.userRepo.save(newUser);
+    const savedUser = await this.userRepo.save(newUser);
+    // Використовуємо DTO для відповіді, щоб пароль не повертався
+    return new UserResponseDto(savedUser);
   }
 
   async refresh(refreshToken: string): Promise<ITokens> {
@@ -187,6 +189,10 @@ export class AuthService {
     email: string,
     password: string,
   ): Promise<UserEntity> {
+    if (!email || !password) {
+      throw new BadRequestException('Email and password are required');
+    }
+
     //Дістає користувача з БД через
     const user = await this.userRepo.findOne({
       where: { email },
@@ -194,7 +200,7 @@ export class AuthService {
     }); //Викликає метод моделі user.validatePassword(password) (bcrypt.compare)
 
     if (!user || !(await user.validatePassword(password))) {
-      throw new UnauthorizedException('Invalid credentials'); //Якщо користувача нема або пароль неправильний → кидає:
+      throw new UnauthorizedException('Email and password are required'); //Якщо користувача нема або пароль неправильний → кидає:
     }
     const isPasswordValid = await user.validatePassword(password);
     if (!isPasswordValid) {

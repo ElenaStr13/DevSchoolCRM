@@ -80,18 +80,8 @@ export class OrdersService {
     return this.orderRepository.findOneBy({ id });
   }
 
-  async create(dto: Partial<OrdersEntity>) {
-    const app = this.orderRepository.create(dto);
-    return this.orderRepository.save(app);
-  }
-
   async update(id: number, dto: Partial<OrdersEntity>) {
     await this.orderRepository.update(id, dto);
     return this.findOne(id);
-  }
-
-  async remove(id: number) {
-    await this.orderRepository.delete(id);
-    return { deleted: true };
   }
 }

@@ -17,7 +17,8 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.environment.set(\"accessToken\", pm.response.json().accessToken);"
+									"pm.environment.set(\"accessToken\", pm.response.json().accessToken);\r",
+									"pm.environment.set(\"refreshToken\", pm.response.json().refreshToken);"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -68,7 +69,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"email\": \"manager1@gmail.com\",\r\n  \"password\": \"manager123\",\r\n  \"role\": \"manager\"\r\n}\r\n",
+							"raw": "{\r\n  \"email\": \"manager14@gmail.com\",\r\n  \"password\": \"manager14\"  \r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -105,8 +106,17 @@
 						},
 						"method": "POST",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"refreshToken\": \"{{refreshToken}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
-							"raw": "http://localhost:3000/auth/register",
+							"raw": "http://localhost:3000/auth/refresh",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -114,7 +124,7 @@
 							"port": "3000",
 							"path": [
 								"auth",
-								"register"
+								"refresh"
 							]
 						}
 					},

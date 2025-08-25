@@ -31,7 +31,8 @@ export class AuthController {
   @Roles('admin')
   @ApiBearerAuth()
   async register(@Request() req, @Body() createUserDto: CreateUserDto) {
-    return this.authService.register(req.user, createUserDto);
+    const adminUser = req.user; // поточний логінений користувач
+    return this.authService.register(adminUser, createUserDto);
   }
 
   @Post('refresh')
