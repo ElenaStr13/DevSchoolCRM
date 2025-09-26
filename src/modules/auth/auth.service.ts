@@ -41,11 +41,13 @@ export class AuthService {
     //Отримує loginDto з поштою і паролем
     const user = await this.validateUser(loginDto.email, loginDto.password); // викликає щоб перевірити, чи є такий користувач і чи правильний пароль.
     const jti = randomUUID(); //Генерує jti (унікальний ID токена)
+    console.log('LOGIN USER:', user);
     const payload = {
       //Формує payload
       userId: user.id,
       email: user.email,
       role: user.role,
+      name: user.name,
       jti,
     };
     if (!user) throw new UnauthorizedException('Invalid credentials');
@@ -54,6 +56,8 @@ export class AuthService {
       //Створює accessToken
       expiresIn: `${this.accessTokenExpiresIn}s`,
     });
+    console.log('Generated payload:', payload); // Дебаг
+    console.log('Access Token:', accessToken);
     const refreshToken = this.jwtService.sign(payload, {
       //Створює  refreshToken
       expiresIn: `${this.refreshTokenExpiresIn}s`,
@@ -91,14 +95,12 @@ export class AuthService {
       throw new ForbiddenException('User with this email already exists');
     }
 
-    // Хешування пароля
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-
     // Створення нового користувача
     const newUser = this.userRepo.create({
       email: createUserDto.email,
-      password: hashedPassword,
+      password: createUserDto.password,
       role: 'manager',
+      name: createUserDto.name,
     });
     const savedUser = await this.userRepo.save(newUser);
     // Використовуємо DTO для відповіді, щоб пароль не повертався
@@ -157,6 +159,7 @@ export class AuthService {
   }
 
   async me(userId: number): Promise<Partial<UserResponseDto> | null> {
+    console.log('Fetching user with id:', userId);
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) return null;
     const dto = plainToInstance(UserResponseDto, user);

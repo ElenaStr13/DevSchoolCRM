@@ -1,4 +1,10 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { UserEntity } from './user.entity';
 
 export enum TokenType {
@@ -30,5 +36,6 @@ export class TokenEntity {
   jti: string;
 
   @ManyToOne(() => UserEntity, (user) => user.tokens)
+  @JoinColumn({ name: 'userId' })
   user: UserEntity;
 }

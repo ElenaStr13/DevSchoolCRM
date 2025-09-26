@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class PaginationQueryDto {
+  //PaginationQueryDto описує page, take, sortBy, order
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -42,4 +43,25 @@ export class PaginationQueryDto {
     description: 'Напрямок сортування',
   })
   order: 'ASC' | 'DESC' = 'DESC';
+
+  @IsOptional()
+  @ApiPropertyOptional({
+    type: 'string',
+    default: 'new',
+    description: 'Фільтр по статусу',
+  })
+  status?: string;
+
+  @IsOptional()
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Пошук по name/surname/email/phone',
+  })
+  search?: string;
+
+  @ApiPropertyOptional({
+    description: 'Фільтр по менеджеру',
+    example: 'manager1@gmail.com',
+  })
+  manager?: string;
 }

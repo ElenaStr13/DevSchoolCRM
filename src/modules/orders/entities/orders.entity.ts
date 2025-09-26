@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToMany,
+  JoinTable,
+} from 'typeorm';
+import { GroupEntity } from '../../group/entities/group.entity';
 
 @Entity('orders')
 export class OrdersEntity {
@@ -38,6 +45,23 @@ export class OrdersEntity {
   @Column()
   alreadyPaid: number;
 
+  @Column({ nullable: true, name: 'student_group' })
+  group: string;
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
+
+  @Column({ nullable: true })
+  manager: string;
+
+  @Column('json', { nullable: true })
+  comments?: { author: string; text: string; createdAt: Date }[];
+
+  @ManyToMany(() => GroupEntity, (group) => group.orders, { eager: true })
+  @JoinTable({
+    name: 'assign_group', // назва проміжної таблиці
+    joinColumn: { name: 'orderId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'groupId', referencedColumnName: 'id' },
+  })
+  groups: GroupEntity[];
 }

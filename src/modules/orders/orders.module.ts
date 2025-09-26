@@ -3,9 +3,11 @@ import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrdersEntity } from './entities/orders.entity';
+import { GroupEntity } from '../group/entities/group.entity';
+import { GroupModule } from '../group/group.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([OrdersEntity])],
+  imports: [TypeOrmModule.forFeature([OrdersEntity, GroupEntity]), GroupModule],
   controllers: [OrdersController],
   providers: [OrdersService],
 })

@@ -1,5 +1,6 @@
 import { Exclude } from 'class-transformer';
 import { UserEntity } from '../entities/user.entity';
+import { Column } from 'typeorm';
 
 export class UserResponseDto {
   id: number;
@@ -7,6 +8,9 @@ export class UserResponseDto {
 
   @Exclude()
   password: string;
+
+  @Column()
+  name: string;
 
   @Exclude()
   role: string;
