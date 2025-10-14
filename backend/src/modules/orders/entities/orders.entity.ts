@@ -46,7 +46,7 @@ export class OrdersEntity {
   alreadyPaid: number;
 
   @Column({ nullable: true, name: 'student_group' })
-  group: string;
+  groupName: string;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;

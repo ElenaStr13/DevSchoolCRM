@@ -24,7 +24,7 @@ export class OrdersService {
     'status',
     'sum',
     'alreadyPaid',
-    'group',
+    'groupName',
     'created_at',
     'manager',
   ] as const;
@@ -124,17 +124,17 @@ export class OrdersService {
       throw new ForbiddenException(`You cannot edit this order`);
     }
 
-    if (dto.group) {
+    if (dto.groupName) {
       let group = await this.groupRepository.findOne({
-        where: { name: dto.group },
+        where: { name: dto.groupName },
       });
 
       if (!group) {
-        group = this.groupRepository.create({ name: dto.group });
+        group = this.groupRepository.create({ name: dto.groupName });
         await this.groupRepository.save(group);
       }
 
-      order.group = group.name;
+      order.groupName = group.name;
       order.groups = [group];
     }
 

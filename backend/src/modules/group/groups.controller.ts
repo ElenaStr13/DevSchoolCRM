@@ -14,19 +14,22 @@ import { GroupEntity } from './entities/group.entity';
 import { Roles } from '../../decorators/roles.decorator';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { RolesGuard } from '../../guards/roles.guard';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('groups')
-@UseGuards(JwtAuthGuard, RolesGuard)
+//@Userds(JwtAuthGuard, RolesGuard)
+//@ApiBearerAuth()
 export class GroupsController {
   constructor(private readonly groupsService: GroupsService) {}
 
   @Post()
-  @Roles('admin')
+  // @Roles('admin')
   create(@Body() dto: CreateGroupDto): Promise<GroupEntity> {
     return this.groupsService.create(dto);
   }
 
   @Get()
+  //@Roles('admin', 'manager')
   findAll(): Promise<GroupEntity[]> {
     return this.groupsService.findAll();
   }
@@ -37,7 +40,7 @@ export class GroupsController {
   }
 
   @Put(':id')
-  @Roles('admin')
+  //@Roles('admin')
   update(
     @Param('id') id: number,
     @Body() dto: CreateGroupDto,
@@ -46,7 +49,7 @@ export class GroupsController {
   }
 
   @Delete(':id')
-  @Roles('admin')
+  //@Roles('admin')
   remove(@Param('id') id: number): Promise<void> {
     return this.groupsService.remove(+id);
   }

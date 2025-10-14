@@ -6,6 +6,16 @@ import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.enableCors({
+    origin: [
+      'http://localhost', // фронт через nginx
+    ],
+    credentials: true,
+    allowedHeaders:
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  });
+
   const config = new DocumentBuilder()
     .setTitle('DevSchool CRM API')
     .setDescription('API for management')
@@ -22,5 +32,6 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
   await app.listen(3000);
+  console.log(`Backend running on http://localhost:3000`);
 }
 bootstrap();

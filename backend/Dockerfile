@@ -5,7 +5,7 @@ LABEL maintainer = 'Dev For School'
 RUN mkdir /app
 WORKDIR /app
 
-COPY backend/package.json ./
+COPY package*.json ./
 RUN npm install
 
 COPY . .

@@ -1,9 +1,16 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
-import AppRouter from "./routers/AppRouter";
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { RouterProvider } from 'react-router-dom';
+import router from './router/Router';
+import { ThemeProvider } from '@mui/material/styles';
+import { theme } from './theme';
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-    <React.StrictMode>
-        <AppRouter />
-    </React.StrictMode>
+const root = ReactDOM.createRoot(
+    document.getElementById('root') as HTMLElement
+);
+
+root.render(
+    <ThemeProvider theme={theme}>
+    <RouterProvider router={router}/>
+    </ThemeProvider>
 );
