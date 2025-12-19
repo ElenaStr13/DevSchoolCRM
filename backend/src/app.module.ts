@@ -4,6 +4,7 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { ConfigModule } from '@nestjs/config';
 import { TypeormModule } from './modules/typeorm/typeorm.module';
 import { GroupModule } from './modules/group/group.module';
+import { ManagersModule } from './modules/managers/managers.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { GroupModule } from './modules/group/group.module';
     AuthModule,
     OrdersModule,
     GroupModule,
+    ManagersModule,
   ],
   controllers: [],
   providers: [],

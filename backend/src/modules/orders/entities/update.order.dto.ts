@@ -76,5 +76,10 @@ export class UpdateOrderDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  group?: string;
+  groupId?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  groupName?: string;
 }

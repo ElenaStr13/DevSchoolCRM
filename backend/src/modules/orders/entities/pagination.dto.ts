@@ -1,4 +1,12 @@
-import { IsInt, IsOptional, Min, Max, IsIn } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  Min,
+  Max,
+  IsIn,
+  IsBooleanString,
+  IsString,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -45,6 +53,37 @@ export class PaginationQueryDto {
   order: 'ASC' | 'DESC' = 'DESC';
 
   @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  surname?: string;
+
+  @IsOptional()
+  @IsString()
+  email?: string;
+
+  @IsOptional()
+  phone?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  age?: number;
+
+  @IsOptional()
+  @IsString()
+  course?: string;
+
+  @IsOptional()
+  @IsString()
+  course_format?: string;
+
+  @IsOptional()
+  @IsString()
+  course_type?: string;
+
+  @IsOptional()
   @ApiPropertyOptional({
     type: 'string',
     default: 'new',
@@ -59,9 +98,23 @@ export class PaginationQueryDto {
   })
   search?: string;
 
+  @IsOptional()
+  @IsString()
   @ApiPropertyOptional({
     description: 'Фільтр по менеджеру',
     example: 'manager1@gmail.com',
   })
   manager?: string;
+
+  @IsOptional()
+  groupName?: string;
+
+  @IsOptional()
+  @IsBooleanString()
+  @ApiPropertyOptional({
+    type: Boolean,
+    description: 'Показувати лише мої заявки (manager)',
+    example: true,
+  })
+  onlyMy?: string;
 }

@@ -1,9 +1,9 @@
 export enum StatusEnum {
-  IN_WORK = 'IN_WORK',
-  NEW = 'NEW',
-  AGGRE = 'AGGRE',
-  DISAGGRE = 'DISAGGRE',
-  DUBBING = 'DUBBING',
+  IN_WORK = 'In work',
+  NEW = 'New',
+  AGGRE = 'Aggre',
+  DISAGGRE = 'Disaggre',
+  DUBBING = 'Dubbing',
 }
 
 export enum CourseEnum {

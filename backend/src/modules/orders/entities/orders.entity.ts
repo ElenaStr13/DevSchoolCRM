@@ -2,8 +2,8 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToMany,
-  JoinTable,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { GroupEntity } from '../../group/entities/group.entity';
 
@@ -55,13 +55,18 @@ export class OrdersEntity {
   manager: string;
 
   @Column('json', { nullable: true })
-  comments?: { author: string; text: string; createdAt: Date }[];
+  comments?: { author: string; text: string; createdAt: string }[];
 
-  @ManyToMany(() => GroupEntity, (group) => group.orders, { eager: true })
-  @JoinTable({
-    name: 'assign_group', // назва проміжної таблиці
-    joinColumn: { name: 'orderId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'groupId', referencedColumnName: 'id' },
+  @Column({ type: 'text', nullable: true })
+  message?: string;
+
+  @Column({ type: 'text', nullable: true })
+  utm?: string;
+
+  @ManyToOne(() => GroupEntity, (group) => group.orders, {
+    eager: true, // автоматично підтягує group при запиті order
+    nullable: true,
   })
-  groups: GroupEntity[];
+  @JoinColumn({ name: 'groupId' })
+  group?: GroupEntity;
 }

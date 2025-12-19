@@ -5,7 +5,7 @@ import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
+  // app.setGlobalPrefix('api');
   app.enableCors({
     origin: [
       'http://localhost', // фронт через nginx
@@ -29,9 +29,18 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: false,
+      transform: true,
+      disableErrorMessages: false, // 👈 бачимо повну причину
+    }),
+  );
+
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
-  await app.listen(3000);
+  await app.listen(3000, '0.0.0.0');
   console.log(`Backend running on http://localhost:3000`);
 }
 bootstrap();

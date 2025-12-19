@@ -3,7 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   Unique,
-  ManyToMany,
+  OneToMany,
 } from 'typeorm';
 import { OrdersEntity } from '../../orders/entities/orders.entity';
 
@@ -16,6 +16,6 @@ export class GroupEntity {
   @Column()
   name: string;
 
-  @ManyToMany(() => OrdersEntity, (order) => order.groups)
+  @OneToMany(() => OrdersEntity, (order) => order.group)
   orders: OrdersEntity[];
 }

@@ -13,5 +13,8 @@ export interface OrderDto {
     alreadyPaid: number;
     created_at: string;
     manager?: string | null;
-    groupName?: string | null;
+    group?: { id: number; name: string } | null;
+    message?: string | null;
+    utm?: string | null;
+    comments?: { author: string; text: string; createdAt: string }[];
 }

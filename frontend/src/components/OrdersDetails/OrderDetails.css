@@ -1,0 +1,77 @@
+.order-details-wrapper {
+    background: #f7f9fb;
+    padding: 15px 25px;
+    border-top: 1px solid #dce2e8;
+    border-bottom: 1px solid #dce2e8;
+    font-family: sans-serif;
+}
+
+.order-details-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.details-row {
+    display: flex;
+    gap: 60px;
+    margin-bottom: 10px;
+}
+
+.details-label {
+    font-weight: bold;
+    color: #555;
+}
+
+.details-value {
+    color: #222;
+}
+
+.comment-list {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 12px;
+    margin-top: 10px;
+}
+
+.comment-item {
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.comment-item:last-child {
+    border-bottom: none;
+}
+
+.comment-meta {
+    font-size: 13px;
+    color: #444;
+    margin-bottom: 4px;
+}
+
+.comment-text {
+    font-size: 14px;
+}
+
+.comment-form {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.edit-btn {
+    margin-top: 15px;
+    background: #198754;
+    color: white;
+    padding: 6px 18px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+    margin-left: auto;   /* ← відштовхує вправо */
+    display: block;
+}
+.edit-btn:hover {
+    background: #146c43;
+}

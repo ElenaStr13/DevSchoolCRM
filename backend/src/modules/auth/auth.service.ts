@@ -14,9 +14,11 @@ import { ConfigService } from '@nestjs/config';
 import { TokenEntity } from './entities/token.entity';
 import { randomUUID } from 'crypto';
 import { CreateUserDto } from './dto/create-user.dto';
-import * as bcrypt from 'bcrypt';
 import { UserResponseDto } from './dto/user.response.dto';
 import { instanceToPlain, plainToInstance } from 'class-transformer';
+import { SetPasswordDto } from './dto/set-password.dto';
+import * as bcrypt from 'bcrypt';
+import { NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class AuthService {
@@ -56,8 +58,6 @@ export class AuthService {
       //Створює accessToken
       expiresIn: `${this.accessTokenExpiresIn}s`,
     });
-    console.log('Generated payload:', payload); // Дебаг
-    console.log('Access Token:', accessToken);
     const refreshToken = this.jwtService.sign(payload, {
       //Створює  refreshToken
       expiresIn: `${this.refreshTokenExpiresIn}s`,
@@ -74,15 +74,15 @@ export class AuthService {
     await this.deleteExpiredTokens();
     return {
       accessToken, //повертається до користувача
-      refreshToken, //повертається до користувача
+      refreshToken,
+      user, //повертається до користувача
     };
   }
 
   async register(
     adminUser: UserEntity,
     createUserDto: CreateUserDto,
-  ): Promise<UserResponseDto> {
-    // Перевірка, чи користувач адмін
+  ): Promise<{ user: UserResponseDto; activationLink: string }> {
     if (adminUser.role !== 'admin') {
       throw new ForbiddenException('Only admins can register new users');
     }
@@ -98,19 +98,59 @@ export class AuthService {
     // Створення нового користувача
     const newUser = this.userRepo.create({
       email: createUserDto.email,
-      password: createUserDto.password,
-      role: 'manager',
+      password: null,
       name: createUserDto.name,
+      ...(createUserDto.surname ? { surname: createUserDto.surname } : {}),
+      role: 'manager',
+      isActive: false,
     });
+    //} as Partial<UserEntity>);
     const savedUser = await this.userRepo.save(newUser);
-    // Використовуємо DTO для відповіді, щоб пароль не повертався
-    return new UserResponseDto(savedUser);
+
+    // 4. Створюємо токен активації, який живе 30 хвилин
+    const token = this.jwtService.sign(
+      { userId: savedUser.id, token_type: 'activate' },
+      {
+        expiresIn: '30m',
+        secret: this.configService.get('JWT_SECRET'),
+      },
+    );
+
+    // 5. Формуємо посилання для активації
+    const activationLink = `${this.configService.get('FRONT_URL')}/activate/${token}`;
+    //const activationLink = `${frontUrl}/activate/${activationToken}`;
+    const userDto = new UserResponseDto(savedUser);
+
+    // 6. Повертаємо користувача + лінк для фронту
+    return {
+      user: userDto,
+      activationLink,
+    };
+  }
+
+  //Метод активації — створення паролю
+  async setPassword(dto: SetPasswordDto) {
+    const payload = this.jwtService.verify(dto.token, {
+      secret: this.configService.get('JWT_SECRET'),
+    });
+
+    if (!payload || payload.token_type !== 'activate') {
+      throw new ForbiddenException('Invalid activation token');
+    }
+
+    const user = await this.userRepo.findOne({ where: { id: payload.userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    user.password = await bcrypt.hash(dto.password, 10);
+    user.isActive = true;
+
+    return this.userRepo.save(user);
   }
 
   async refresh(refreshToken: string): Promise<ITokens> {
     try {
       // Перевіряємо refreshToken
-      const payload = this.jwtService.verify(refreshToken);
+      //const payload = this.jwtService.verify(refreshToken);
       const tokenEntity = await this.tokenRepository.findOne({
         where: { refreshToken, isBlocked: false },
         relations: ['user'],
@@ -153,18 +193,81 @@ export class AuthService {
         accessToken: newAccessToken,
         refreshToken: newRefreshToken,
       };
-    } catch (e) {
+    } catch {
       throw new UnauthorizedException('Refresh token expired or invalid');
     }
   }
 
   async me(userId: number): Promise<Partial<UserResponseDto> | null> {
-    console.log('Fetching user with id:', userId);
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) return null;
+
     const dto = plainToInstance(UserResponseDto, user);
     return instanceToPlain(dto);
   }
+
+  // async activateUserAndGenerateLink(
+  //   userId: number,
+  // ): Promise<{ user: UserEntity; activationLink: string }> {
+  //   const user = await this.userRepo.findOne({ where: { id: userId } });
+  //   if (!user) throw new Error('User not found');
+  //
+  //   // 1. Активуємо користувача
+  //   user.isActive = true;
+  //   await this.userRepo.save(user);
+  //
+  //   // 2. Генеруємо токен для фронту
+  //   const jwtSecret = this.configService.get<string>('JWT_SECRET');
+  //   const frontUrl = this.configService.get<string>('FRONT_URL');
+  //   if (!jwtSecret || !frontUrl)
+  //     throw new Error('JWT_SECRET or FRONT_URL not configured');
+  //
+  //   const token = this.jwtService.sign(
+  //     { userId: user.id, token_type: 'activate' },
+  //     { expiresIn: '30m', secret: jwtSecret },
+  //   );
+  //
+  //   const activationLink = `${frontUrl}/activate/${token}`;
+  //
+  //   return { user, activationLink };
+  // }
+  //
+  // async generateRecoveryPasswordLink(
+  //   userId: number,
+  // ): Promise<{ user: UserEntity; recoveryLink: string }> {
+  //   const user = await this.userRepo.findOne({ where: { id: userId } });
+  //   if (!user) throw new NotFoundException('User not found');
+  //
+  //   // Не міняємо isActive — він і так true
+  //   const jwtSecret = this.configService.get<string>('JWT_SECRET');
+  //   const frontUrl = this.configService.get<string>('FRONT_URL');
+  //
+  //   const token = this.jwtService.sign(
+  //     { userId: user.id, token_type: 'activate' },
+  //     { expiresIn: '30m', secret: jwtSecret },
+  //   );
+  //
+  //   const recoveryLink = `${frontUrl}/activate/${token}`;
+  //   return { user, recoveryLink };
+  // }
+
+  // async banUser(id: number): Promise<{ message: string }> {
+  //   const user = await this.userRepo.findOne({ where: { id } });
+  //   if (!user) throw new UnauthorizedException('User not found');
+  //
+  //   user.isBanned = true;
+  //   await this.userRepo.save(user);
+  //   return { message: 'User banned' };
+  // }
+  //
+  // async unbanUser(id: number): Promise<{ message: string }> {
+  //   const user = await this.userRepo.findOne({ where: { id } });
+  //   if (!user) throw new UnauthorizedException('User not found');
+  //   user.isBanned = false;
+  //   //user.isActive = true;
+  //   await this.userRepo.save(user);
+  //   return { message: 'User unbanned' };
+  // }
 
   private async saveTokens(
     user: UserEntity,
@@ -202,9 +305,14 @@ export class AuthService {
       relations: ['tokens'],
     }); //Викликає метод моделі user.validatePassword(password) (bcrypt.compare)
 
-    if (!user || !(await user.validatePassword(password))) {
+    if (!user) {
       throw new UnauthorizedException('Email and password are required'); //Якщо користувача нема або пароль неправильний → кидає:
     }
+
+    if (user.isBanned) {
+      throw new UnauthorizedException('User is banned');
+    }
+
     const isPasswordValid = await user.validatePassword(password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');

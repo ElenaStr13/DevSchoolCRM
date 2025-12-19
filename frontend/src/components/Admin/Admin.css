@@ -1,0 +1,137 @@
+/* 🔹 PAGE */
+.admin-page {
+    background-color: #f5f6f8;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 40px 0;
+}
+
+/* 🔹 CONTAINER */
+.admin-container {
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    width: 90%;
+    max-width: 1200px;
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* 🔹 HEADER */
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.admin-title {
+    font-weight: 600;
+}
+
+/* 🔹 BUTTON */
+.add-manager-btn {
+    border-radius: 10px;
+    padding: 10px 22px;
+}
+
+/* 🔹 SECTIONS */
+.section-title {
+    font-size: 18px;
+    margin: 24px 0 12px;
+    font-weight: 600;
+}
+
+/* 🔹 STATS */
+.stats-wrapper {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.admin-card {
+    width: 150px;
+    border-radius: 12px;
+    background: #fafafa;
+    border: 1px solid #eee;
+    text-align: center;
+}
+
+.count-text {
+    font-weight: 700;
+}
+
+/* 🔹 TABLE */
+.admin-table {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.admin-table thead th {
+    background: #f4f6f8;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.admin-table tbody td {
+    font-size: 14px;
+    padding: 10px;
+}
+
+.admin-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+/* 🔹 STATUS BADGES */
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.active {
+    background: #e6f4ea;
+    color: #54cf7d;
+}
+
+.status-badge.banned {
+    background: #fce8e6;
+    color: #dc5956;
+}
+
+/* 🔹 ACTIONS */
+.actions {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+}
+
+.actions button {
+    font-size: 12px;
+    padding: 4px 10px;
+}
+
+/* 🔹 LOADER */
+.admin-loader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 70vh;
+}
+
+/* PAGINATION */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.pagination-info {
+    font-weight: 500;
+    color: #555;
+}
+

@@ -16,24 +16,35 @@ export class UserEntity {
   @Column()
   email: string;
 
-  @Column()
-  password: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  password: string | null;
 
   @Column()
   name: string;
 
+  @Column({ nullable: true })
+  surname?: string;
+
   @Column({ type: 'enum', enum: ['admin', 'manager'], default: 'manager' })
   role: 'admin' | 'manager';
+
+  @Column({ default: true })
+  isActive: boolean;
+
+  @Column({ default: false })
+  isBanned: boolean;
 
   @OneToMany(() => TokenEntity, (token) => token.user)
   tokens: TokenEntity[];
 
   async validatePassword(password: string): Promise<boolean> {
-    return bcrypt.compare(password, this.password);
+    if (!this.password) return false;
+    return await bcrypt.compare(password, this.password);
   }
 
   @BeforeInsert()
   async hashPassword() {
+    if (!this.password) return;
     this.password = await bcrypt.hash(this.password, 10);
   }
 }
