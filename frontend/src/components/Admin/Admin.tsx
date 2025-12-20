@@ -20,6 +20,7 @@ import {
     TableHead,
     TableRow,
     Paper,
+    Pagination,
 } from "@mui/material";
 import { AdminService } from "../../services/admin.service";
 import "./Admin.css";
@@ -287,26 +288,16 @@ export default function Admin() {
                 </TableContainer>
 
                 <Box className="pagination">
-                    <Button
-                        variant="outlined"
-                        disabled={page === 1}
-                        onClick={() => setPage(prev => prev - 1)}
-                    >
-                        ← Назад
-                    </Button>
-
-                    <Typography className="pagination-info">
-                        Сторінка {page} з {totalPages}
-                    </Typography>
-
-                    <Button
-                        variant="outlined"
-                        disabled={page === totalPages}
-                        onClick={() => setPage(prev => prev + 1)}
-                    >
-                        Вперед →
-                    </Button>
+                    <Pagination
+                        count={totalPages}
+                        page={page}
+                        onChange={(_, value) => setPage(value)}
+                        color="primary"
+                        shape="rounded"
+                    />
                 </Box>
+
+
 
 
                 {/* 🔹 MODALS / SNACKBAR */}

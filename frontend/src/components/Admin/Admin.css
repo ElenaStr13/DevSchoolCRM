@@ -121,17 +121,15 @@
     height: 70vh;
 }
 
-/* PAGINATION */
+
 .pagination {
     display: flex;
     justify-content: center;
-    align-items: center;
-    gap: 16px;
     margin-top: 24px;
+    color: #4CAF50;
 }
 
-.pagination-info {
+.pagination .MuiPaginationItem-root {
+    border-radius: 10px;
     font-weight: 500;
-    color: #555;
 }
-

@@ -80,17 +80,16 @@ export class OrdersService {
       });
     }
 
-    // адмін
-    if (user.role === 'admin') {
-      if (isOnlyMy) {
-        qb.andWhere('LOWER(TRIM(o.manager)) = LOWER(:manager)', {
-          manager: user.name.trim(),
-        });
-      } else if (managerFilter) {
-        qb.andWhere('LOWER(TRIM(o.manager)) LIKE LOWER(:managerFilter)', {
-          managerFilter: `%${managerFilter.trim()}%`,
-        });
-      }
+    if (isOnlyMy) {
+      qb.andWhere('LOWER(TRIM(o.manager)) = LOWER(:manager)', {
+        manager: user.name.trim(),
+      });
+    }
+
+    if (managerFilter) {
+      qb.andWhere('LOWER(TRIM(o.manager)) LIKE LOWER(:managerFilter)', {
+        managerFilter: `%${managerFilter.trim()}%`,
+      });
     }
 
     // Фільтрація за іншими параметрами
