@@ -30,7 +30,7 @@ export class OrdersService {
     'groupName',
     'created_at',
     'manager',
-  ] as const;
+  ];
 
   constructor(
     @InjectRepository(UserEntity)
@@ -64,40 +64,43 @@ export class OrdersService {
       ...filters
     } = query;
 
-    console.log('USER:', user);
-    console.log('RAW QUERY:', query);
-    console.log('FILTERS:', filters);
+    console.log('SERVICE managerFilter:', managerFilter);
+    console.log('SERVICE onlyMy:', onlyMy);
+    console.log('SERVICE filters keys:', Object.keys(filters));
 
     const qb = this.orderRepository
       .createQueryBuilder('o')
       .leftJoinAndSelect('o.group', 'group');
     const isOnlyMy = ['true', '1', 'on'].includes(String(onlyMy).toLowerCase());
     console.log('onlyMy:', onlyMy, '=>', isOnlyMy);
-    // менеджер — ЗАВЖДИ тільки свої
+
+    /* ================== MANAGER FILTER ================== */
     if (user.role === 'manager') {
-      qb.andWhere('LOWER(TRIM(o.manager)) = LOWER(:manager)', {
-        manager: user.name.trim(),
+      qb.andWhere('LOWER(TRIM(o.manager)) = LOWER(:mgrName)', {
+        mgrName: user.name.trim(),
       });
-    }
+    } else if (user.role === 'admin') {
+      if (managerFilter) {
+        qb.andWhere('LOWER(TRIM(o.manager)) LIKE LOWER(:mgrFilter)', {
+          mgrFilter: `%${managerFilter.trim()}%`,
+        });
+      }
 
-    if (isOnlyMy) {
-      qb.andWhere('LOWER(TRIM(o.manager)) = LOWER(:manager)', {
-        manager: user.name.trim(),
-      });
-    }
-
-    if (managerFilter) {
-      qb.andWhere('LOWER(TRIM(o.manager)) LIKE LOWER(:managerFilter)', {
-        managerFilter: `%${managerFilter.trim()}%`,
-      });
+      if (isOnlyMy) {
+        // можна залишити else if, якщо "тільки мої" тільки коли немає фільтра
+        qb.andWhere('LOWER(TRIM(o.manager)) = LOWER(:mgrMy)', {
+          mgrMy: user.name.trim(),
+        });
+      }
     }
 
     // Фільтрація за іншими параметрами
     Object.entries(filters).forEach(([key, value]) => {
+      if (key === 'manager') return;
       if (!value || value === '') return;
 
       if (OrdersService.SORTABLE_COLUMNS.includes(key as any)) {
-        if (typeof value === 'string' && isNaN(Number(value))) {
+        if (typeof value === 'string') {
           qb.andWhere(`LOWER(o.${key}) LIKE LOWER(:${key})`, {
             [key]: `%${value.trim()}%`,
           });
@@ -113,9 +116,14 @@ export class OrdersService {
     // Пагінація
     qb.skip((page - 1) * take).take(take);
 
-    console.log('SQL:', qb.getSql());
-    console.log('PARAMS:', qb.getParameters());
+    console.log('=== DEBUG MANAGER FILTER ===');
+    console.log('managerFilter from query:', managerFilter);
 
+    const test = await qb.clone().getMany();
+    console.log(
+      'MANAGERS IN RESULT:',
+      test.map((o) => o.manager),
+    );
     const [items, total] = await qb.getManyAndCount();
 
     console.log('FINAL SQL:', qb.getSql());
@@ -128,15 +136,15 @@ export class OrdersService {
     };
   }
 
-  async getAllForExport(filters: Record<string, any>) {
+  async getAllForExport() {
     return this.orderRepository.find({
       relations: ['group'],
       order: { id: 'ASC' },
     });
   }
 
-  async generateExcel(filters: Record<string, any>) {
-    const orders = await this.getAllForExport(filters);
+  async generateExcel() {
+    const orders = await this.getAllForExport();
 
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Orders');
@@ -419,48 +427,26 @@ export class OrdersService {
     console.log('onlyMy:', onlyMy);
     console.log('managerFilter:', managerFilter);
 
-    // менеджер — завжди тільки свої
     if (user.role === 'manager') {
-      qb.andWhere('LOWER(o.manager) = LOWER(:manager)', {
-        manager: user.name,
+      // Менеджер завжди бачить тільки свої (незалежно від регістру)
+      qb.andWhere('LOWER(TRIM(o.manager)) = LOWER(:managerName)', {
+        managerName: user.name.trim(),
       });
-    }
-
-    // адмін
-    if (user.role === 'admin') {
-      if (isOnlyMy) {
-        qb.andWhere('LOWER(o.manager) = LOWER(:manager)', {
-          manager: user.name,
-        });
-      }
-
+    } else if (user.role === 'admin') {
+      // Якщо є фільтр по менеджеру — шукаємо підрядок незалежно від регістру
       if (managerFilter) {
-        qb.andWhere('LOWER(o.manager) LIKE LOWER(:managerFilter)', {
-          managerFilter: `%${managerFilter}%`,
+        qb.andWhere('LOWER(TRIM(o.manager)) LIKE LOWER(:managerFilter)', {
+          managerFilter: `%${managerFilter.trim()}%`,
+        });
+      }
+      // Якщо фільтра немає, але ввімкнено "тільки мої"
+      else if (isOnlyMy) {
+        qb.andWhere('LOWER(TRIM(o.manager)) = LOWER(:managerName)', {
+          managerName: user.name.trim(),
         });
       }
     }
 
-    // // 1️Якщо менеджер — завжди тільки свої
-    // if (user.role === 'manager') {
-    //   qb.andWhere('LOWER(o.manager) = LOWER(:manager)', {
-    //     manager: user.name,
-    //   });
-    // }
-    //
-    // // 2️ Якщо адмін і включено "тільки мої"
-    // else if (isOnlyMy) {
-    //   qb.andWhere('LOWER(o.manager) = LOWER(:manager)', {
-    //     manager: user.name,
-    //   });
-    // }
-    //
-    // // 3️Якщо адмін і введений manager у фільтрі
-    // else if (managerFilter) {
-    //   qb.andWhere('LOWER(o.manager) LIKE LOWER(:managerFilter)', {
-    //     managerFilter: `%${managerFilter}%`,
-    //   });
-    // }
     /* ================== GROUP ================== */
     if (groupName) {
       qb.andWhere('o.groupName = :groupName', { groupName });

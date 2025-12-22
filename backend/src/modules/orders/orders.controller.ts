@@ -38,7 +38,8 @@ export class OrdersController {
     @Query() query: PaginationQueryDto,
     @Req() req: AuthRequest,
   ) {
-    console.log('CONTROLLER QUERY:', query);
+    console.log('CONTROLLER RAW QUERY:', query);
+    console.log('CONTROLLER manager:', query.manager, typeof query.manager);
     return this.ordersService.findPaginated(query, req.user as AuthUser);
   }
 
@@ -56,10 +57,10 @@ export class OrdersController {
 
   @Post('export')
   async exportExcel(
-    @Body() filters: Record<string, any>,
+    // @Body() filters: Record<string, any>,
     @Res() res: Response,
   ) {
-    const buffer = await this.ordersService.generateExcel(filters);
+    const buffer = await this.ordersService.generateExcel();
 
     res.set({
       'Content-Type':

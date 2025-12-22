@@ -4,6 +4,7 @@ import { OrderDto } from '../dto/order.dto';
 
 export class OrdersService {
     static async findPaginated(query: PaginationQueryDto) {
+        console.log('FRONT QUERY:', query);
         const res = await api.get('/orders', { params: query });
         return {
             data: res.data.items,
@@ -17,8 +18,7 @@ export class OrdersService {
     }
 
     static async findMyPaginated(query: PaginationQueryDto) {
-        const res = await api.get('/orders', { params: query });
-        //const res = await api.get('/orders/my', { params: query });
+        const res = await api.get('/orders/my', { params: query });
         return {
             data: res.data.items,
             totalCount: res.data.total,

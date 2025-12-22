@@ -45,6 +45,7 @@ export default function Orders() {
             try {
                 const query: PaginationQueryDto = { page, take, sortBy, order, ...filters };
                 const { data, totalCount } = await OrdersService.findPaginated(query);
+                //const { data, totalCount } = await OrdersService.findPaginated(query);
 
                  setOrders(data);
                  setTotal(totalCount);
@@ -239,7 +240,8 @@ export default function Orders() {
                                                 <option value="">— Не призначено —</option>
                                                 {managersList.map((m: any) => (
                                                     <option key={m.id} value={m.name}>
-                                                        {m.name} {m.surname}
+                                                        {m.name.trim()}
+                                                        {/*{m.name} {m.surname}*/}
                                                     </option>
                                                 ))}
                                             </select>

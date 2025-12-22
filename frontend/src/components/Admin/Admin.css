@@ -126,10 +126,11 @@
     display: flex;
     justify-content: center;
     margin-top: 24px;
-    color: #4CAF50;
+
 }
 
 .pagination .MuiPaginationItem-root {
     border-radius: 10px;
     font-weight: 500;
+    color: #4CAF50;
 }
