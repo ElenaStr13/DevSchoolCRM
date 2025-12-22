@@ -28,7 +28,6 @@ export default function Header() {
     const handleExportExcel = async () => {
         try {
             // беремо фільтри зі сторінки Orders
-            // тут можна прокинуть filters через context або пропс, якщо Header не знає про Orders
             const filters = JSON.parse(localStorage.getItem("ordersFilters") || "{}");
 
             // запит на бекенд

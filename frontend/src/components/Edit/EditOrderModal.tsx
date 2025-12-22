@@ -169,13 +169,6 @@ export default function EditOrderModal({
                         </Button>
                     </Box>
                 </Box>
-                    {/*<Button variant="outlined" onClick={() => setSelectOpen(true)}>*/}
-                    {/*    SELECT*/}
-                    {/*</Button>*/}
-                    {/*<Button variant="contained" color="secondary" onClick={handleAddGroup}>*/}
-                    {/*    ADD*/}
-                    {/*</Button>*/}
-
 
                 {/* Модальне вікно для вибору групи */}
                 <Dialog open={selectOpen} onClose={() => setSelectOpen(false)} fullWidth maxWidth="xs">
@@ -204,7 +197,7 @@ export default function EditOrderModal({
                     </DialogActions>
                 </Dialog>
 
-                {/* === ІНША ФОРМА === */}
+                {/*  ІНША ФОРМА  */}
                 <Box className="form-grid">
                     <Box className="form-column">
                         <TextField

@@ -35,7 +35,7 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: false,
       transform: true,
-      disableErrorMessages: false, // 👈 бачимо повну причину
+      disableErrorMessages: false,
     }),
   );
 

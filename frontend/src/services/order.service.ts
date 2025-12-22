@@ -64,7 +64,7 @@ export class OrdersService {
 
     static async getGroups(): Promise<{ id: number; name: string }[]> {
         const res = await api.get('/groups');
-        return res.data; // повертаємо об'єкти {id, name}
+        return res.data;
     }
 
     static async createGroup(name: string): Promise<{ id: number; name: string }> {
@@ -77,7 +77,7 @@ export class OrdersService {
             "/orders/export",
             filters,
             {
-                responseType: "blob", // <- обовʼязково, інакше файл зламається
+                responseType: "blob",
             }
         );
     }

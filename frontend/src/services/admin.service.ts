@@ -12,7 +12,7 @@ export class AdminService {
         meta: { total: number; page: number; take: number; pages: number };
     }> {
         const res = await api.get('/managers/paginated', { params: { page, take } });
-        return res.data; // повертає { data, meta }
+        return res.data;
     }
 
     static async getAllManagers(): Promise<Manager[]> {
@@ -31,7 +31,7 @@ export class AdminService {
 
     static async recoveryLink(id: number) {
         const res = await api.post(`/managers/recovery-password/${id}`);
-        return res.data; // бекенд повертає { link: "..."}
+        return res.data;
     }
 
     static async banManager(id: number) {

@@ -74,7 +74,7 @@ export class OrdersService {
     const isOnlyMy = ['true', '1', 'on'].includes(String(onlyMy).toLowerCase());
     console.log('onlyMy:', onlyMy, '=>', isOnlyMy);
 
-    /* ================== MANAGER FILTER ================== */
+    /*  MANAGER FILTER  */
     if (user.role === 'manager') {
       qb.andWhere('LOWER(TRIM(o.manager)) = LOWER(:mgrName)', {
         mgrName: user.name.trim(),
@@ -87,7 +87,6 @@ export class OrdersService {
       }
 
       if (isOnlyMy) {
-        // можна залишити else if, якщо "тільки мої" тільки коли немає фільтра
         qb.andWhere('LOWER(TRIM(o.manager)) = LOWER(:mgrMy)', {
           mgrMy: user.name.trim(),
         });
@@ -188,7 +187,7 @@ export class OrdersService {
       // Шукаємо замовлення з усіма потрібними relations
       const order = await this.orderRepository.findOne({
         where: { id }, // саме так правильно для TypeORM v0.3.x
-        relations: ['group'], // якщо потрібні додаткові relations, додавай сюди
+        relations: ['group'],
       });
 
       if (!order) {
@@ -200,11 +199,9 @@ export class OrdersService {
     } catch (err) {
       // Логування для дебагу
       console.error('Помилка завантаження заявки (findOne):', {
-        //message: err.message,
-        //stack: err.stack,
         id,
       });
-      // Кидаємо помилку далі, NestJS перетворить її на відповідний HTTP код
+
       throw err;
     }
   }
@@ -239,21 +236,17 @@ export class OrdersService {
       }
       order.group = group;
       order.groupName = group.name;
-      //(order as any).student_group = group.name;
     }
     console.log('Updating order group:', {
       orderId: order.id,
       groupName: order.groupName,
-      //groupId: group.id,
     });
     if (dto.groupName) {
-      order.groupName = dto.groupName; // ← вручну замінюємо, TypeORM тепер точно бачить зміну
+      order.groupName = dto.groupName;
     }
 
-    //return await this.orderRepository.save(order);
     await this.orderRepository.save(order);
 
-    // ПІСЛЯ ЗБЕРЕЖЕННЯ ПІДВАНТАЖУЄМО АКТУАЛЬНІ ДАНІ
     const updated = await this.orderRepository.findOne({
       where: { id: order.id },
       relations: ['group'],
@@ -261,7 +254,7 @@ export class OrdersService {
     if (!updated) {
       throw new NotFoundException(`Order with id=${id} not found after update`);
     }
-    // ДОДАЄМО groupName ДЛЯ ФРОНТУ
+
     return {
       ...updated,
       groupName: updated.group?.name ?? null,
@@ -333,11 +326,7 @@ export class OrdersService {
     return { ...saved, groupName: saved.group?.name ?? null };
   }
 
-  async findMyOrdersPaginated(
-    user: AuthUser,
-    // currentManagerName: string,
-    query: PaginationQueryDto,
-  ) {
+  async findMyOrdersPaginated(user: AuthUser, query: PaginationQueryDto) {
     const {
       page = 1,
       take = 25,
@@ -361,27 +350,27 @@ export class OrdersService {
     console.log('query.onlyMy:', onlyMy, 'type:', typeof onlyMy);
     console.log('query.managerFilter:', managerFilter);
 
-    /* ================== NORMALIZE onlyMy ================== */
+    /* NORMALIZE onlyMy */
     const isOnlyMy = onlyMy === 'true' || onlyMy === '1';
 
     console.log('isOnlyMy (normalized):', isOnlyMy);
 
     const skip = (page - 1) * take;
 
-    /* ================== SORT ================== */
+    /*SORT*/
     const sortColumn = OrdersService.SORTABLE_COLUMNS.includes(sortBy as any)
       ? sortBy
       : 'created_at';
 
     const sortDirection: 'ASC' | 'DESC' = order === 'ASC' ? 'ASC' : 'DESC';
 
-    /* ================== QUERY BUILDER ================== */
+    /*  QUERY BUILDER*/
     const qb = this.orderRepository
       .createQueryBuilder('o')
       .select(OrdersService.SORTABLE_COLUMNS.map((col) => `o.${col}`))
       .where('1=1');
 
-    /* ================== FILTERS ================== */
+    /*FILTERS*/
     if (name) {
       qb.andWhere('LOWER(o.name) LIKE LOWER(:name)', { name: `%${name}%` });
     }
@@ -422,7 +411,7 @@ export class OrdersService {
       qb.andWhere('o.status = :status', { status });
     }
 
-    /* ================== MANAGER FILTER ================== */
+    /*MANAGER FILTER */
     console.log('ROLE:', user.role);
     console.log('onlyMy:', onlyMy);
     console.log('managerFilter:', managerFilter);
@@ -447,12 +436,12 @@ export class OrdersService {
       }
     }
 
-    /* ================== GROUP ================== */
+    /* GROUP */
     if (groupName) {
       qb.andWhere('o.groupName = :groupName', { groupName });
     }
 
-    /* ================== SEARCH ================== */
+    /*  SEARCH*/
     if (search) {
       qb.andWhere(
         `(o.name LIKE :q 
@@ -463,17 +452,10 @@ export class OrdersService {
       );
     }
 
-    /* ================== FINAL QUERY ================== */
+    /* FINAL QUERY */
     qb.orderBy(`o.${sortColumn}`, sortDirection).skip(skip).take(take);
 
-    /* ================== ЛОГИ (2) SQL ================== */
-    console.log('SQL:', qb.getSql());
-    console.log('PARAMS:', qb.getParameters());
-
     const [data, total] = await qb.getManyAndCount();
-
-    console.log('RESULT:', data.length, 'of', total);
-    console.log('=== findMyOrdersPaginated END ===');
 
     return {
       data,

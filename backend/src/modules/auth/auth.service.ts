@@ -73,9 +73,9 @@ export class AuthService {
     );
     await this.deleteExpiredTokens();
     return {
-      accessToken, //повертається до користувача
+      accessToken,
       refreshToken,
-      user, //повертається до користувача
+      user,
     };
   }
 
@@ -104,7 +104,7 @@ export class AuthService {
       role: 'manager',
       isActive: false,
     });
-    //} as Partial<UserEntity>);
+
     const savedUser = await this.userRepo.save(newUser);
 
     // 4. Створюємо токен активації, який живе 30 хвилин
@@ -150,7 +150,6 @@ export class AuthService {
   async refresh(refreshToken: string): Promise<ITokens> {
     try {
       // Перевіряємо refreshToken
-      //const payload = this.jwtService.verify(refreshToken);
       const tokenEntity = await this.tokenRepository.findOne({
         where: { refreshToken, isBlocked: false },
         relations: ['user'],
@@ -206,69 +205,6 @@ export class AuthService {
     return instanceToPlain(dto);
   }
 
-  // async activateUserAndGenerateLink(
-  //   userId: number,
-  // ): Promise<{ user: UserEntity; activationLink: string }> {
-  //   const user = await this.userRepo.findOne({ where: { id: userId } });
-  //   if (!user) throw new Error('User not found');
-  //
-  //   // 1. Активуємо користувача
-  //   user.isActive = true;
-  //   await this.userRepo.save(user);
-  //
-  //   // 2. Генеруємо токен для фронту
-  //   const jwtSecret = this.configService.get<string>('JWT_SECRET');
-  //   const frontUrl = this.configService.get<string>('FRONT_URL');
-  //   if (!jwtSecret || !frontUrl)
-  //     throw new Error('JWT_SECRET or FRONT_URL not configured');
-  //
-  //   const token = this.jwtService.sign(
-  //     { userId: user.id, token_type: 'activate' },
-  //     { expiresIn: '30m', secret: jwtSecret },
-  //   );
-  //
-  //   const activationLink = `${frontUrl}/activate/${token}`;
-  //
-  //   return { user, activationLink };
-  // }
-  //
-  // async generateRecoveryPasswordLink(
-  //   userId: number,
-  // ): Promise<{ user: UserEntity; recoveryLink: string }> {
-  //   const user = await this.userRepo.findOne({ where: { id: userId } });
-  //   if (!user) throw new NotFoundException('User not found');
-  //
-  //   // Не міняємо isActive — він і так true
-  //   const jwtSecret = this.configService.get<string>('JWT_SECRET');
-  //   const frontUrl = this.configService.get<string>('FRONT_URL');
-  //
-  //   const token = this.jwtService.sign(
-  //     { userId: user.id, token_type: 'activate' },
-  //     { expiresIn: '30m', secret: jwtSecret },
-  //   );
-  //
-  //   const recoveryLink = `${frontUrl}/activate/${token}`;
-  //   return { user, recoveryLink };
-  // }
-
-  // async banUser(id: number): Promise<{ message: string }> {
-  //   const user = await this.userRepo.findOne({ where: { id } });
-  //   if (!user) throw new UnauthorizedException('User not found');
-  //
-  //   user.isBanned = true;
-  //   await this.userRepo.save(user);
-  //   return { message: 'User banned' };
-  // }
-  //
-  // async unbanUser(id: number): Promise<{ message: string }> {
-  //   const user = await this.userRepo.findOne({ where: { id } });
-  //   if (!user) throw new UnauthorizedException('User not found');
-  //   user.isBanned = false;
-  //   //user.isActive = true;
-  //   await this.userRepo.save(user);
-  //   return { message: 'User unbanned' };
-  // }
-
   private async saveTokens(
     user: UserEntity,
     accessToken: string,
@@ -321,7 +257,6 @@ export class AuthService {
   }
 
   private async deleteExpiredTokens() {
-    //видаляє з таблиці ті записи, у яких refreshTokenExpiresAt
     const now = new Date();
     await this.tokenRepository.delete({
       refreshTokenExpiresAt: LessThan(now),

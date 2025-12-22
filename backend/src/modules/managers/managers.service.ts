@@ -151,7 +151,7 @@ export class ManagersService {
     return { user, recoveryLink };
   }
 
-  // Бан/Розбан
+  // Бан
   async banManager(id: number): Promise<{ message: string }> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) throw new UnauthorizedException('User not found');
@@ -160,7 +160,7 @@ export class ManagersService {
     await this.userRepository.save(user);
     return { message: 'User banned' };
   }
-
+  //Розбан
   async unbanManager(id: number): Promise<{ message: string }> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) throw new UnauthorizedException('User not found');

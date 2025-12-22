@@ -5,12 +5,12 @@ import { TokenEntity } from './modules/auth/entities/token.entity';
 
 export const AppDataSource = new DataSource({
   type: 'mysql',
-  host: 'owu.linkpc.net', // твій хост хмарної БД
-  port: 3306, // порт MySQL
-  username: 'crmapplications', // твій логін
-  password: 'ElenaStr', // твій пароль
-  database: 'crmapplications', // назва БД
-  entities: [UserEntity, TokenEntity], // всі entity, які використовуєш
-  synchronize: true, // true — автоматично створює таблиці (для деву)
+  host: 'owu.linkpc.net',
+  port: 3306,
+  username: 'crmapplications',
+  password: 'ElenaStr',
+  database: 'crmapplications',
+  entities: [UserEntity, TokenEntity],
+  synchronize: true,
   logging: false,
 });

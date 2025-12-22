@@ -135,8 +135,8 @@ export default function Orders() {
         }
     };
     const handleEditOpen = (order: OrderDto) => {
-        setSelectedOrder(order); // Оновлюємо вибрану заявку
-        setEditOpen(true); // Відкриваємо модалку
+        setSelectedOrder(order);
+        setEditOpen(true);
     };
 
     //список менеджерів
@@ -285,18 +285,7 @@ export default function Orders() {
                 onPageChange={handlePageChange}
             />
 
-            {/* Деталі заявки */}
-            {/*<div ref={detailsRef}>*/}
-            {/*    {selectedOrder && (*/}
-            {/*        <OrderDetails*/}
-            {/*            order={selectedOrder}*/}
-            {/*            currentUser={currentUser}*/}
-            {/*            onAddComment={handleAddComment}*/}
-            {/*            onEditOpen={handleEditOpen}*/}
-            {/*        />*/}
-            {/*    )}*/}
-            {/*</div>*/}
-            {/* Модалка для редагування */}
+
             {selectedOrder && (
                 <EditOrderModal
                     open={editOpen}

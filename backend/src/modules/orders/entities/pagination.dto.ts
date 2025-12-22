@@ -11,7 +11,6 @@ import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class PaginationQueryDto {
-  //PaginationQueryDto описує page, take, sortBy, order
   @IsOptional()
   @Type(() => Number)
   @IsInt()

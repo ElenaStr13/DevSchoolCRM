@@ -86,9 +86,6 @@ export default function Admin() {
                 message: "Менеджера створено успішно",
                 severity: "success",
             });
-            //const updatedManagers = await AdminService.getManagers();
-            //setManagers(updatedManagers);
-
 
             await loadManagers(1); // повертаємось на 1 сторінку
             setPage(1);
@@ -109,12 +106,6 @@ export default function Admin() {
         try {
             const { activationLink } = await AdminService.activateManager(id);
             await loadManagers();
-            // const { user: updatedUser, activationLink } =
-            //     await AdminService.activateManager(id);
-            // await loadManagers();
-            // setManagers(
-            //     managers.map((m) => (m.id === updatedUser.id ? updatedUser : m))
-            // );
             await navigator.clipboard.writeText(activationLink);
             setSnackbar({
                 open: true,
@@ -128,12 +119,7 @@ export default function Admin() {
 
     const handleRecovery = async (id: number) => {
         try {
-            // const { user: updatedUser, recoveryLink } =
-            //     await AdminService.recoveryPassword(id);
-            // await loadManagers();
-            // setManagers(
-            //     managers.map((m) => (m.id === updatedUser.id ? updatedUser : m))
-            // );
+
             const { recoveryLink } = await AdminService.recoveryPassword(id);
             await loadManagers();
 
@@ -184,7 +170,7 @@ export default function Admin() {
         <Box className="admin-page">
             <Box className="admin-container">
 
-                {/* 🔹 HEADER */}
+                {/* HEADER */}
                 <Box className="admin-header">
                     <Typography variant="h4" className="admin-title">
                         Панель адміністратора
@@ -198,7 +184,7 @@ export default function Admin() {
                     </Button>
                 </Box>
 
-                {/* 🔹 STATISTICS */}
+                {/* STATISTICS */}
                 <Typography className="section-title">Статистика заявок</Typography>
                 <Box className="stats-wrapper">
                     {Object.entries(stats || {}).map(([key, value]) => (
@@ -213,11 +199,11 @@ export default function Admin() {
                     ))}
                 </Box>
 
-                {/* 🔹 MANAGERS TABLE */}
+                {/* MANAGERS TABLE */}
                 <Typography className="section-title">Список менеджерів</Typography>
 
                 <TableContainer component={Paper} className="admin-table">
-                    {/* 🔹 size="small" — компактна таблиця */}
+
                     <Table size="small">
                         <TableHead>
                             <TableRow>
@@ -240,7 +226,7 @@ export default function Admin() {
                                     <TableCell>{m.name}</TableCell>
                                     <TableCell>{m.surname}</TableCell>
 
-                                    {/* 🔹 STATUS BADGE */}
+                                    {/* STATUS BADGE */}
                                     <TableCell>
                                         <span className={`status-badge ${m.isActive ? "active" : "banned"}`}>
                                             {m.isActive ? "Active" : "Banned"}
@@ -255,7 +241,7 @@ export default function Admin() {
 
                                     <TableCell>{m.totalOrders || 0}</TableCell>
 
-                                    {/* 🔹 ACTIONS */}
+                                    {/* ACTIONS */}
                                     <TableCell align="center">
                                         <Box className="actions">
                                             {m.isActive ? (
@@ -300,7 +286,7 @@ export default function Admin() {
 
 
 
-                {/* 🔹 MODALS / SNACKBAR */}
+                {/*  MODALS / SNACKBAR */}
                 <Dialog open={open} onClose={() => setOpen(false)}>
                     <DialogTitle>Створити менеджера</DialogTitle>
                     <DialogContent>

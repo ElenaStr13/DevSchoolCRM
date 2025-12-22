@@ -12,7 +12,7 @@ export default function Pagination({ page, totalPages, onPageChange }: Paginatio
 
     const buttons: React.ReactNode[] = [];
 
-    // ⬅️ Кнопка "Назад"
+    //  Кнопка "Назад"
     if (page > 1) {
         buttons.push(
             <PageButton key="prev" onClick={() => onPageChange(page - 1)}>
@@ -32,7 +32,7 @@ export default function Pagination({ page, totalPages, onPageChange }: Paginatio
         let start = Math.max(2, page - 3);
         let end = Math.min(totalPages - 1, page + 3);
 
-        // 🧩 Коли користувач близько до кінця — зрушуємо вікно вліво
+        // Коли користувач близько до кінця — зрушуємо вікно вліво
         if (page >= totalPages - 3) {
             start = totalPages - (windowSize - 1);
             end = totalPages - 1;
@@ -46,7 +46,7 @@ export default function Pagination({ page, totalPages, onPageChange }: Paginatio
         visiblePages.push(totalPages);
     }
 
-    // 🔢 Малюємо сторінки
+    // Малюємо сторінки
     for (const p of visiblePages) {
         if (p === -1 || p === -2) {
             buttons.push(
@@ -63,7 +63,7 @@ export default function Pagination({ page, totalPages, onPageChange }: Paginatio
         }
     }
 
-    // ➡️ Кнопка "Вперед"
+    //  Кнопка "Вперед"
     if (page < totalPages) {
         buttons.push(
             <PageButton key="next" onClick={() => onPageChange(page + 1)}>
