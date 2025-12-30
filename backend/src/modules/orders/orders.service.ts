@@ -11,6 +11,8 @@ import { GroupEntity } from '../group/entities/group.entity';
 import { UserEntity } from '../auth/entities/user.entity';
 import * as ExcelJS from 'exceljs';
 import { AuthUser } from '../auth/interfaces/auth-user.interface';
+import { OrdersFilterBuilder } from './utils/orders-filter.builder';
+import { OrdersManagerFilter } from './utils/orders-manager.filter';
 
 @Injectable()
 export class OrdersService {
@@ -50,64 +52,29 @@ export class OrdersService {
   }
 
   // заявки з пагінацією
-  async findPaginated(
-    query: PaginationQueryDto,
-    user: { id: number; role: string; name: string }, // Тип користувача
-  ) {
+  async findPaginated(query: PaginationQueryDto, user: AuthUser) {
     const {
       page = 1,
       take = 25,
       sortBy = 'created_at',
       order = 'DESC',
-      manager: managerFilter,
       onlyMy,
-      ...filters
+      managerId,
     } = query;
-
-    console.log('SERVICE managerFilter:', managerFilter);
-    console.log('SERVICE onlyMy:', onlyMy);
-    console.log('SERVICE filters keys:', Object.keys(filters));
 
     const qb = this.orderRepository
       .createQueryBuilder('o')
-      .leftJoinAndSelect('o.group', 'group');
-    const isOnlyMy = ['true', '1', 'on'].includes(String(onlyMy).toLowerCase());
-    console.log('onlyMy:', onlyMy, '=>', isOnlyMy);
+      .leftJoinAndSelect('o.group', 'group')
+      .leftJoinAndSelect('o.managerUser', 'manager');
 
-    /*  MANAGER FILTER  */
-    if (user.role === 'manager') {
-      qb.andWhere('LOWER(TRIM(o.manager)) = LOWER(:mgrName)', {
-        mgrName: user.name.trim(),
-      });
-    } else if (user.role === 'admin') {
-      if (managerFilter) {
-        qb.andWhere('LOWER(TRIM(o.manager)) LIKE LOWER(:mgrFilter)', {
-          mgrFilter: `%${managerFilter.trim()}%`,
-        });
-      }
+    OrdersFilterBuilder.apply(qb, query);
 
-      if (isOnlyMy) {
-        qb.andWhere('LOWER(TRIM(o.manager)) = LOWER(:mgrMy)', {
-          mgrMy: user.name.trim(),
-        });
-      }
-    }
-
-    // Фільтрація за іншими параметрами
-    Object.entries(filters).forEach(([key, value]) => {
-      if (key === 'manager') return;
-      if (!value || value === '') return;
-
-      if (OrdersService.SORTABLE_COLUMNS.includes(key as any)) {
-        if (typeof value === 'string') {
-          qb.andWhere(`LOWER(o.${key}) LIKE LOWER(:${key})`, {
-            [key]: `%${value.trim()}%`,
-          });
-        } else {
-          qb.andWhere(`o.${key} = :${key}`, { [key]: value });
-        }
-      }
-    });
+    OrdersManagerFilter.apply(
+      qb,
+      user,
+      managerId ? Number(managerId) : undefined,
+      ['true', '1'].includes(String(onlyMy)),
+    );
 
     // Сортування
     qb.orderBy(`o.${sortBy}`, order);
@@ -115,18 +82,8 @@ export class OrdersService {
     // Пагінація
     qb.skip((page - 1) * take).take(take);
 
-    console.log('=== DEBUG MANAGER FILTER ===');
-    console.log('managerFilter from query:', managerFilter);
-
-    const test = await qb.clone().getMany();
-    console.log(
-      'MANAGERS IN RESULT:',
-      test.map((o) => o.manager),
-    );
     const [items, total] = await qb.getManyAndCount();
 
-    console.log('FINAL SQL:', qb.getSql());
-    console.log('FINAL PARAMS:', qb.getParameters());
     return {
       items,
       total,
@@ -525,7 +482,16 @@ export class OrdersService {
       throw new NotFoundException(`Order with id ${id} not found`);
     }
 
-    order.manager = managerName;
+    const manager = await this.userRepository.findOne({
+      where: { name: managerName, role: 'manager' },
+    });
+    if (!manager) {
+      throw new NotFoundException('Manager not found');
+    }
+    order.manager = manager.name; // legacy
+    // order.managerId = manager.id;
+    order.managerUser = manager;
+    // order.manager = managerName;
 
     if (!order.status || order.status === 'New') {
       order.status = 'In Work';

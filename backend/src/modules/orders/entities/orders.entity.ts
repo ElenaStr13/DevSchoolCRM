@@ -6,6 +6,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { GroupEntity } from '../../group/entities/group.entity';
+import { UserEntity } from '../../auth/entities/user.entity';
 
 @Entity('orders')
 export class OrdersEntity {
@@ -69,4 +70,8 @@ export class OrdersEntity {
   })
   @JoinColumn({ name: 'groupId' })
   group?: GroupEntity;
+
+  @ManyToOne(() => UserEntity, { nullable: true })
+  @JoinColumn({ name: 'managerId' })
+  managerUser?: UserEntity;
 }

@@ -116,4 +116,13 @@ export class PaginationQueryDto {
     example: true,
   })
   onlyMy?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @ApiPropertyOptional({
+    description: 'Фільтр по менеджеру (FK)',
+    example: 3,
+  })
+  managerId?: number;
 }
