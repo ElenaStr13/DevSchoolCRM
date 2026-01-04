@@ -58,10 +58,13 @@ export default function OrdersFilter({ onFilterChange }: OrdersFilterProps) {
                     <Checkbox
                         checked={filters.onlyMy === "true"}
                         onChange={(e) => {
-                            const updated = {
-                                ...filters,
-                                onlyMy: e.target.checked ? "true" : "false"
-                            };
+                            const updated = { ...filters };
+
+                            if (e.target.checked) {
+                                updated.onlyMy = "true";
+                            } else {
+                                delete updated.onlyMy;
+                            }
                             setFilters(updated);
                             onFilterChange(updated);
                         }}

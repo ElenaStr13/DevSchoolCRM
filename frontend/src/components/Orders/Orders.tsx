@@ -44,6 +44,10 @@ export default function Orders() {
         const fetchOrders = async () => {
             try {
                 const query: PaginationQueryDto = { page, take, sortBy, order, ...filters };
+                if (!filters.onlyMy) {
+                    delete (query as any).onlyMy;
+                }
+
                 const { data, totalCount } = await OrdersService.findPaginated(query);
 
                  setOrders(data);

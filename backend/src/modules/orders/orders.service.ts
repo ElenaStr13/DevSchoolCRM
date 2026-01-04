@@ -43,14 +43,6 @@ export class OrdersService {
     private readonly groupRepository: Repository<GroupEntity>,
   ) {}
 
-  // всі заявки
-  async findAll(): Promise<OrdersEntity[]> {
-    return this.orderRepository.find({
-      select: OrdersService.SORTABLE_COLUMNS,
-      order: { created_at: 'DESC' },
-    });
-  }
-
   // заявки з пагінацією
   async findPaginated(query: PaginationQueryDto, user: AuthUser) {
     const {
@@ -83,7 +75,9 @@ export class OrdersService {
     qb.skip((page - 1) * take).take(take);
 
     const [items, total] = await qb.getManyAndCount();
-
+    console.log('ROLE:', user.role);
+    console.log('RAW onlyMy:', onlyMy);
+    console.log('PARSED onlyMy:', ['true', '1'].includes(String(onlyMy)));
     return {
       items,
       total,
@@ -289,139 +283,37 @@ export class OrdersService {
       take = 25,
       sortBy = 'created_at',
       order = 'DESC',
-      status,
-      search,
-      name,
-      surname,
-      email,
-      phone,
-      age,
-      course,
-      course_format,
-      course_type,
-      manager: managerFilter,
-      groupName,
+      managerId,
       onlyMy,
     } = query;
 
-    console.log('query.onlyMy:', onlyMy, 'type:', typeof onlyMy);
-    console.log('query.managerFilter:', managerFilter);
-
-    /* NORMALIZE onlyMy */
-    const isOnlyMy = onlyMy === 'true' || onlyMy === '1';
-
-    console.log('isOnlyMy (normalized):', isOnlyMy);
-
-    const skip = (page - 1) * take;
-
-    /*SORT*/
-    const sortColumn = OrdersService.SORTABLE_COLUMNS.includes(sortBy as any)
-      ? sortBy
-      : 'created_at';
-
-    const sortDirection: 'ASC' | 'DESC' = order === 'ASC' ? 'ASC' : 'DESC';
-
-    /*  QUERY BUILDER*/
     const qb = this.orderRepository
       .createQueryBuilder('o')
-      .select(OrdersService.SORTABLE_COLUMNS.map((col) => `o.${col}`))
-      .where('1=1');
+      .leftJoinAndSelect('o.group', 'group')
+      .leftJoinAndSelect('o.managerUser', 'manager');
 
-    /*FILTERS*/
-    if (name) {
-      qb.andWhere('LOWER(o.name) LIKE LOWER(:name)', { name: `%${name}%` });
-    }
+    OrdersFilterBuilder.apply(qb, query);
 
-    if (surname) {
-      qb.andWhere('LOWER(o.surname) LIKE LOWER(:surname)', {
-        surname: `%${surname}%`,
-      });
-    }
+    OrdersManagerFilter.apply(
+      qb,
+      user,
+      managerId ? Number(managerId) : undefined,
+      ['true', '1'].includes(String(onlyMy)),
+    );
 
-    if (email) {
-      qb.andWhere('LOWER(o.email) LIKE LOWER(:email)', {
-        email: `%${email}%`,
-      });
-    }
+    // Сортування
+    qb.orderBy(`o.${sortBy}`, order);
 
-    if (phone) {
-      qb.andWhere('o.phone LIKE :phone', { phone: `%${phone}%` });
-    }
+    // Пагінація
+    qb.skip((page - 1) * take).take(take);
 
-    if (age !== undefined) {
-      qb.andWhere('o.age = :age', { age });
-    }
-
-    if (course) {
-      qb.andWhere('o.course = :course', { course });
-    }
-
-    if (course_format) {
-      qb.andWhere('o.course_format = :course_format', { course_format });
-    }
-
-    if (course_type) {
-      qb.andWhere('o.course_type = :course_type', { course_type });
-    }
-
-    if (status) {
-      qb.andWhere('o.status = :status', { status });
-    }
-
-    /*MANAGER FILTER */
-    console.log('ROLE:', user.role);
-    console.log('onlyMy:', onlyMy);
-    console.log('managerFilter:', managerFilter);
-
-    if (user.role === 'manager') {
-      // Менеджер завжди бачить тільки свої (незалежно від регістру)
-      qb.andWhere('LOWER(TRIM(o.manager)) = LOWER(:managerName)', {
-        managerName: user.name.trim(),
-      });
-    } else if (user.role === 'admin') {
-      // Якщо є фільтр по менеджеру — шукаємо підрядок незалежно від регістру
-      if (managerFilter) {
-        qb.andWhere('LOWER(TRIM(o.manager)) LIKE LOWER(:managerFilter)', {
-          managerFilter: `%${managerFilter.trim()}%`,
-        });
-      }
-      // Якщо фільтра немає, але ввімкнено "тільки мої"
-      else if (isOnlyMy) {
-        qb.andWhere('LOWER(TRIM(o.manager)) = LOWER(:managerName)', {
-          managerName: user.name.trim(),
-        });
-      }
-    }
-
-    /* GROUP */
-    if (groupName) {
-      qb.andWhere('o.groupName = :groupName', { groupName });
-    }
-
-    /*  SEARCH*/
-    if (search) {
-      qb.andWhere(
-        `(o.name LIKE :q 
-        OR o.surname LIKE :q 
-        OR o.email LIKE :q 
-        OR o.phone LIKE :q)`,
-        { q: `%${search}%` },
-      );
-    }
-
-    /* FINAL QUERY */
-    qb.orderBy(`o.${sortColumn}`, sortDirection).skip(skip).take(take);
-
-    const [data, total] = await qb.getManyAndCount();
+    const [items, total] = await qb.getManyAndCount();
 
     return {
-      data,
-      meta: {
-        total,
-        page,
-        take,
-        pages: Math.ceil(total / take),
-      },
+      items,
+      total,
+      page,
+      take,
     };
   }
 
@@ -488,7 +380,7 @@ export class OrdersService {
     if (!manager) {
       throw new NotFoundException('Manager not found');
     }
-    order.manager = manager.name; // legacy
+    order.manager = manager.name;
     // order.managerId = manager.id;
     order.managerUser = manager;
     // order.manager = managerName;

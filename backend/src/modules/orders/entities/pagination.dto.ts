@@ -115,7 +115,7 @@ export class PaginationQueryDto {
     description: 'Показувати лише мої заявки (manager)',
     example: true,
   })
-  onlyMy?: string;
+  onlyMy?: boolean;
 
   @IsOptional()
   @Type(() => Number)

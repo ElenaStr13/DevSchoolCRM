@@ -20,8 +20,10 @@ export class OrdersService {
     static async findMyPaginated(query: PaginationQueryDto) {
         const res = await api.get('/orders/my', { params: query });
         return {
-            data: res.data.items,
-            totalCount: res.data.total,
+            data: Array.isArray(res.data?.items) ? res.data.items : [],
+            totalCount: Number(res.data?.total ?? 0),
+            //data: res.data.items,
+           // totalCount: res.data.total,
         };
     }
 

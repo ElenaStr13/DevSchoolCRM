@@ -77,6 +77,7 @@ export class OrdersController {
     @Req() req: AuthRequest,
     @Query() query: PaginationQueryDto,
   ) {
+    console.log('HIT /orders/my');
     return this.ordersService.findMyOrdersPaginated(
       req.user as AuthUser,
       query,

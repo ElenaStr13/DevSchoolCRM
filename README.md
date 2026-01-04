@@ -46,48 +46,53 @@ NestJS (backend) + React(frontend) +  MySQL з TypeScript.
 
 Запуск проєкту.
 1. Встанови Node.js та npm
-Проєкт працює на Node.js ≥ 18.
-Завантажити Node.js.
-Після встановлення можна перевірити:
-node -v
-npm -v
+Якщо node в тебе не встановлена глобально, то треба її встановити.
+Завантаж та встанови останню LTS-версію Node.js з офіційного сайту:  
+ https://nodejs.org/. Вибери **LTS** (наразі це зазвичай 20.x або 22.x) → завантажте інсталятор для вашої ОС. 
+Після встановлення можна перевірити чи завантажилась node і яка версія,
+в терміналі ввівши команду: 
+node -v. Там ти побачиш версію своєї node. Наприклад: "v20.11.1".
+Проєкт працює на Node.js ≥ 18npm 
 
 2. Клонуй репозиторій:
 git clone https://github.com/ElenaStr13/DevSchoolCRM.git
 cd DevSchoolCRM
+3. Відкрий в IntelliJ IDEA цей проект та зайди в термінал,
+де встанови залежності ввівши команду в корені проекту: npm install або npm i.
 
-3. Backend
+4. Backend
 Перейди у backend: cd backend
 Встанови залежності: npm install
 Створи тут файл .env на основі .env.example 
-Вказати доступ до MySQL
-Запусти міграції (створення таблиць): npm run migration:run
-Запусти сервер: npm run start:dev
-Backend буде доступний: http://localhost:3000
+Якщо треба під'єднатися до БД MySQL зовні, тоді виконуй вказівки нижче:   
+    - Відкрий панель **Database** (View → Tool Windows → Database)
+    - Натисни **+** → **Data Source** → **PostgreSQL** / **MySQL** 
+    - Заповни поля з .env файлу:Host, Port, User, Password, Database, URL.
+    - У вкладці **Drivers** обери MySQL, версія: MySQL 8.x   
+    -  Натисни **Test Connection** → має бути зелений
+Потім натискай кнопку "Apply", "Ok".  
+5.Запусти міграції (створення таблиць): npm run migration:run
+Міграції створять потрібні таблиці.
+
+6. Запусти сервер: npm run start:dev
+Backend API буде доступний на: http://localhost:3000
+(який можна відкрити у  postman)
 Документація API (Swagger): http://localhost:3000/api
 
-4. Frontend
+7. Frontend
 Перейди у frontend:  cd ../frontend
 Встанови залежностей: npm install
-Запусти frontend: npm run dev
+Запусти frontend: npm start
+Frontend буде доступний: http://localhost:3001.
+
+8. Запускаємо проект через Docker(рекомендовано).
+Створи .env файл в корені проекту. Та скопіюй дані з .env  файлу backend.
+Треба встановлення Docker на компьютері та запустити його.
+Після того як Docker запущений ти можеш запустити проект через команду в терміналі:
+docker-compose up --build.
 Frontend буде доступний: http://localhost:80
 
-5. Налаштуй базу даних MySQL.
-Встанови MySQL (якщо ще не встановлений)
-Створи базу даних у MySQL:
-всі дані знаходяться в configuration
-
-6. Запусти міграції
-Міграції створять потрібні таблиці:
-npm run migration:run
-
-7. Запусти проєкт
-Для розробки (автоматичне перезапускання при змінах коду):
-npm run start:dev
-Для звичайного запуску:
-npm run start
-
-8. Відкрий Swagger-документацію
+10. Відкрий Swagger-документацію
 Після запуску зайди в браузері:
 http://localhost:3000/api
 Там буде готова документація API (Swagger UI).

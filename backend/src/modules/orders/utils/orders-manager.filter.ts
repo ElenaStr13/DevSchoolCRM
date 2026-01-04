@@ -9,13 +9,15 @@ export class OrdersManagerFilter {
     managerId?: number,
     onlyMy?: boolean,
   ) {
-    if (user.role === 'admin') {
-      if (managerId) {
-        qb.andWhere('manager.id = :managerId', { managerId });
-      } else if (onlyMy) {
-        qb.andWhere('manager.id = :myId', { myId: user.id });
-      }
+    // Адмін → фільтр по менеджеру
+    if (user.role === 'admin' && managerId) {
+      qb.andWhere('manager.id = :managerId', { managerId });
       return;
+    }
+
+    // OnlyMy — для будь-якої ролі
+    if (onlyMy === true) {
+      qb.andWhere('manager.id = :myId', { myId: user.id });
     }
   }
 }
