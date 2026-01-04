@@ -381,9 +381,7 @@ export class OrdersService {
       throw new NotFoundException('Manager not found');
     }
     order.manager = manager.name;
-    // order.managerId = manager.id;
     order.managerUser = manager;
-    // order.manager = managerName;
 
     if (!order.status || order.status === 'New') {
       order.status = 'In Work';
