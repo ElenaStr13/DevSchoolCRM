@@ -80,7 +80,7 @@ Backend API буде доступний на: http://localhost:3000
 Документація API (Swagger): http://localhost:3000/api
 
 7. Frontend
-Перейди у frontend:  cd ../frontend
+Перейди у frontend:  cd frontend
 Встанови залежностей: npm install
 Запусти frontend: npm start
 Frontend буде доступний: http://localhost:3001.

@@ -34,7 +34,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
     };
 
     const validatePassword = (value: string) => {
-        return value.length >= 5 || 'Пароль повинен містити щонайменше 6 символів';
+        return value.length >= 5 || 'Неправильний пароль';
     };
 
     const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
