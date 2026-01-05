@@ -15,7 +15,7 @@ export class OrdersManagerFilter {
       return;
     }
 
-    // OnlyMy — для будь-якої ролі
+    //OnlyMy — для будь-якої ролі
     if (onlyMy === true) {
       qb.andWhere('manager.id = :myId', { myId: user.id });
     }

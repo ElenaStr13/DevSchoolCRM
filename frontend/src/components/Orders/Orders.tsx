@@ -43,10 +43,11 @@ export default function Orders() {
     useEffect(() => {
         const fetchOrders = async () => {
             try {
-                const query: PaginationQueryDto = { page, take, sortBy, order, ...filters };
-                if (!filters.onlyMy) {
-                    delete (query as any).onlyMy;
-                }
+                const cleanedFilters = Object.fromEntries(
+                    Object.entries(filters).filter(([_, v]) => v != null && v !== '')
+                );
+                const query: PaginationQueryDto = { page, take, sortBy, order, ...cleanedFilters };
+
 
                 const { data, totalCount } = await OrdersService.findPaginated(query);
 
@@ -60,6 +61,8 @@ export default function Orders() {
                     order,
                 });
                 window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+                // console.log('Фільтри перед відправкою:', filters);
+                // console.log('Повний query об’єкт:', query);
             } catch (error) {
                 console.error("Помилка завантаження заявок:", error);
             } finally {

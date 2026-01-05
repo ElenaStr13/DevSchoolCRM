@@ -118,6 +118,7 @@ export class ManagersService {
 
     // 2. Генеруємо токен для фронту
     const jwtSecret = this.configService.get<string>('JWT_SECRET');
+    //const frontUrl = this.configService.get<string>('front.url');
     const frontUrl = this.configService.get<string>('FRONT_URL');
     if (!jwtSecret || !frontUrl)
       throw new Error('JWT_SECRET or FRONT_URL not configured');

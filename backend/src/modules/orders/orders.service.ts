@@ -75,9 +75,9 @@ export class OrdersService {
     qb.skip((page - 1) * take).take(take);
 
     const [items, total] = await qb.getManyAndCount();
-    console.log('ROLE:', user.role);
-    console.log('RAW onlyMy:', onlyMy);
-    console.log('PARSED onlyMy:', ['true', '1'].includes(String(onlyMy)));
+    // console.log('ROLE:', user.role);
+    // console.log('RAW onlyMy:', onlyMy);
+    // console.log('PARSED onlyMy:', ['true', '1'].includes(String(onlyMy)));
     return {
       items,
       total,
