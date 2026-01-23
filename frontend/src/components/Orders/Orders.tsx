@@ -13,11 +13,14 @@ import EditOrderModal from "../../components/Edit/EditOrderModal";
 import OrdersFilter from "../../components/OrdersFilter/OrdersFilter";
 import { AdminService } from "../../services/admin.service";
 import {Manager} from "../../types/manager.type";
+import { useNavigate } from "react-router-dom";
 
 export default function Orders() {
+    const navigate = useNavigate();
+
     const [orders, setOrders] = useState<OrderDto[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filters, setFilters] = useState<Record<string, string>>({});
+    const [filters, setFilters] = useState<Partial<PaginationQueryDto>>({});
     const [take, setTake] = useState(25);
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
@@ -36,6 +39,42 @@ export default function Orders() {
     const totalPages = Math.ceil(total / take);
 
     useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+
+        const nextFilters: Record<string, any> = {};
+
+        const allowedFilterKeys = [
+            'name',
+            'surname',
+            'email',
+            'phone',
+            'age',
+            'course',
+            'course_format',
+            'course_type',
+            'status',
+            'search',
+            'manager',
+            'groupName',
+            'onlyMy',
+            'managerId',
+        ];
+
+        params.forEach((value, key) => {
+            if (key === 'page') setPage(Number(value));
+            else if (key === 'take') setTake(Number(value));
+            else if (key === 'sortBy') setSortBy(value);
+            else if (key === 'order') setOrder(value as 'ASC' | 'DESC');
+            else if (allowedFilterKeys.includes(key)) {
+                nextFilters[key] = isNaN(Number(value)) ? value : Number(value);
+            }
+        });
+
+        setFilters(nextFilters);
+    }, []);
+
+
+    useEffect(() => {
         localStorage.setItem("ordersFilters", JSON.stringify(filters));
     }, [filters]);
 
@@ -46,23 +85,27 @@ export default function Orders() {
                 const cleanedFilters = Object.fromEntries(
                     Object.entries(filters).filter(([_, v]) => v != null && v !== '')
                 );
+                const { page: _p, take: _t, sortBy: _s, order: _o, ...safeFilters } = filters;
                 const query: PaginationQueryDto = { page, take, sortBy, order, ...cleanedFilters };
-
 
                 const { data, totalCount } = await OrdersService.findPaginated(query);
 
                  setOrders(data);
                  setTotal(totalCount);
 
-                const params = new URLSearchParams({
-                    page: page.toString(),
-                    take: take.toString(),
-                    sortBy,
-                    order,
-                });
-                window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
-                // console.log('Фільтри перед відправкою:', filters);
-                // console.log('Повний query об’єкт:', query);
+                const params = new URLSearchParams(
+                    Object.entries({
+                        page,
+                        take,
+                        sortBy,
+                        order,
+                        ...filters,
+                    })
+                        .filter(([_, v]) => v !== undefined && v !== null && v !== '')
+                        .map(([k, v]) => [k, String(v)])
+                );
+
+                navigate({ search: params.toString() }, { replace: true });
             } catch (error) {
                 console.error("Помилка завантаження заявок:", error);
             } finally {
@@ -82,6 +125,23 @@ export default function Orders() {
             setOrder("ASC");
         }
     };
+
+// URL SYNC
+    useEffect(() => {
+        const params = new URLSearchParams(
+            Object.entries({
+                page,
+                take,
+                sortBy,
+                order,
+                ...filters,
+            })
+                .filter(([_, v]) => v !== undefined && v !== null && v !== "")
+                .map(([key, value]) => [key, String(value)])
+        );
+
+        navigate({ search: params.toString() }, { replace: true });
+    }, [page, take, sortBy, order, filters]);
 
     // Клік по рядку
     const handleRowClick = async (order: OrderDto) => {
@@ -175,6 +235,11 @@ export default function Orders() {
         }
     };
 
+    const handleFilterChange = (newFilters: Record<string, any>) => {
+        setPage(1);        // ⬅️ скидаємо сторінку
+        setFilters(newFilters);
+    };
+
 
     if (loading)
         return (
@@ -185,7 +250,8 @@ export default function Orders() {
 
     return (
         <Box sx={{ p: 2 }}>
-            <OrdersFilter onFilterChange={setFilters} />
+            <OrdersFilter onChange={handleFilterChange} />
+                          {/* onFilterChange={setFilters} onResetPage={() => setPage(1)} />*/}
             <TableContainer component={Paper}>
                 <Table>
                     <StyledTableHead>
@@ -290,7 +356,6 @@ export default function Orders() {
                 totalPages={totalPages}
                 onPageChange={handlePageChange}
             />
-
 
             {selectedOrder && (
                 <EditOrderModal

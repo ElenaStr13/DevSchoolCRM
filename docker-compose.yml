@@ -7,9 +7,9 @@ services:
     container_name: nest-backend
     env_file:
       - .env
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
+#    volumes:
+#      - ./backend:/app
+#      - /app/node_modules
     ports:
       - "3000:3000"
 

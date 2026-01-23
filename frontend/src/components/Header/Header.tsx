@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AuthService } from '../../services/auth.service';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { AppBar, Toolbar, Typography, Button, Box, Avatar } from '@mui/material';
 import './Header.css';
 import {OrdersService} from "../../services/order.service";
@@ -8,6 +8,9 @@ import {OrdersService} from "../../services/order.service";
 export default function Header() {
     const [user, setUser] = useState<any>(null);
     const navigate = useNavigate();
+    const location = useLocation();
+    const isOrdersPage = location.pathname.startsWith('/orders');
+    const isAdminPage = location.pathname.startsWith('/admin');
 
     useEffect(() => {
         AuthService.getMe()
@@ -63,41 +66,48 @@ export default function Header() {
                 <Box display="flex" alignItems="center" gap={2}>
                     {user && <Typography>{user.email}</Typography>}
 
-                    {/* 🔹 Кнопка "Admin" доступна тільки адміну */}
-                    {user?.role === 'admin' && (
+                    {isAdminPage && (
+                        <Button
+                            variant="outlined"
+                            onClick={() => navigate('/orders')}
+                            sx={{ textTransform: 'none' }}
+                        >
+                            До заявок
+                        </Button>
+                    )}
+
+                    {user?.role === 'admin' && !isAdminPage && (
                         <Button
                             variant="contained"
                             color="info"
                             onClick={() => navigate('/admin')}
-                            sx={{
-                                textTransform: 'none',
-                                backgroundColor: '#2196f3',
-                                '&:hover': { backgroundColor: '#1976d2' },
-                            }}
+                            sx={{ textTransform: 'none' }}
                         >
                             Admin
                         </Button>
                     )}
+
                     <Button
                         onClick={handleLogout}
                         variant="contained"
                         color="error"
-                        sx={{
-                            textTransform: 'none',
-                            fontWeight: 500,
-                        }}
+                        sx={{ textTransform: 'none', fontWeight: 500 }}
                     >
                         Вийти
                     </Button>
-                    <Button
-                        variant="contained"
-                        color="success"
-                        sx={{ textTransform: "none" }}
-                        onClick={() => handleExportExcel()}
-                    >
-                        Експорт Excel
-                    </Button>
+
+                    {isOrdersPage && (
+                        <Button
+                            variant="contained"
+                            color="success"
+                            sx={{ textTransform: 'none' }}
+                            onClick={handleExportExcel}
+                        >
+                            Експорт Excel
+                        </Button>
+                    )}
                 </Box>
+
             </Toolbar>
         </AppBar>
     );

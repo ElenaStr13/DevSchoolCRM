@@ -34,7 +34,10 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
     };
 
     const validatePassword = (value: string) => {
-        return value.length >= 5 || 'Неправильний пароль';
+        if (value.length < 5) {
+            return 'Пароль закороткий';
+        }
+        return true;
     };
 
     const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
@@ -55,12 +58,11 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
             }
         } catch (err: any) {
             console.log('Помилка:', err);
-            console.log('Помилка:', err);
             if (err.response) {
                 const status = err.response.status;
                 const errorMessage = err.response.data?.message || 'Помилка авторизації';
                 if (status === 401) {
-                    setApiError(errorMessage === 'Invalid credentials' ? 'Невірний email або пароль' : errorMessage);
+                    setApiError(errorMessage === 'Invalid credentials' ? 'Пошта або пароль не валідні' : errorMessage);
                 } else if (status === 403) {
                     setApiError('Користувач заблокований');
                 } else if (status === 400) {

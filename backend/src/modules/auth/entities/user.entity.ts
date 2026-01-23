@@ -1,12 +1,7 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  OneToMany,
-  BeforeInsert,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { TokenEntity } from './token.entity';
 import * as bcrypt from 'bcrypt';
+import { Exclude } from 'class-transformer';
 
 @Entity('users')
 export class UserEntity {
@@ -16,7 +11,8 @@ export class UserEntity {
   @Column()
   email: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Exclude({ toPlainOnly: true })
+  @Column({ type: 'varchar', length: 255, nullable: true, select: false })
   password: string | null;
 
   @Column()
@@ -38,13 +34,13 @@ export class UserEntity {
   tokens: TokenEntity[];
 
   async validatePassword(password: string): Promise<boolean> {
-    if (!this.password) return false;
+    console.log('VALIDATE PASSWORD DEBUG:');
+    console.log('  Введений:', password);
+    console.log('  Хеш у БД:', this.password);
+    console.log('  Тип хешу:', typeof this.password);
+    if (!this.password) {
+      return false;
+    }
     return await bcrypt.compare(password, this.password);
-  }
-
-  @BeforeInsert()
-  async hashPassword() {
-    if (!this.password) return;
-    this.password = await bcrypt.hash(this.password, 10);
   }
 }

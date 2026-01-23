@@ -15,10 +15,10 @@ import { TokenEntity } from './entities/token.entity';
 import { randomUUID } from 'crypto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserResponseDto } from './dto/user.response.dto';
-import { instanceToPlain, plainToInstance } from 'class-transformer';
+import { instanceToPlain } from 'class-transformer';
 import { SetPasswordDto } from './dto/set-password.dto';
-import * as bcrypt from 'bcrypt';
 import { NotFoundException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -41,9 +41,9 @@ export class AuthService {
 
   async login(loginDto: LoginDto): Promise<ITokens> {
     //Отримує loginDto з поштою і паролем
-    const user = await this.validateUser(loginDto.email, loginDto.password); // викликає щоб перевірити, чи є такий користувач і чи правильний пароль.
-    const jti = randomUUID(); //Генерує jti (унікальний ID токена)
-    console.log('LOGIN USER:', user);
+    const user = await this.validateUser(loginDto.email, loginDto.password);
+    const jti = randomUUID();
+
     const payload = {
       //Формує payload
       userId: user.id,
@@ -52,7 +52,7 @@ export class AuthService {
       name: user.name,
       jti,
     };
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    if (!user) throw new UnauthorizedException('Неправильні дані');
 
     const accessToken = this.jwtService.sign(payload, {
       //Створює accessToken
@@ -72,6 +72,7 @@ export class AuthService {
       jti,
     );
     await this.deleteExpiredTokens();
+
     return {
       accessToken,
       refreshToken,
@@ -84,7 +85,9 @@ export class AuthService {
     createUserDto: CreateUserDto,
   ): Promise<{ user: UserResponseDto; activationLink: string }> {
     if (adminUser.role !== 'admin') {
-      throw new ForbiddenException('Only admins can register new users');
+      throw new ForbiddenException(
+        'Тільки адміністратор може реєструвати нових користувачів',
+      );
     }
 
     // Перевірка, чи email вже існує
@@ -92,7 +95,7 @@ export class AuthService {
       where: { email: createUserDto.email },
     });
     if (existingUser) {
-      throw new ForbiddenException('User with this email already exists');
+      throw new ForbiddenException('Користувач з такою поштою вже існує');
     }
 
     // Створення нового користувача
@@ -118,7 +121,6 @@ export class AuthService {
 
     // 5. Формуємо посилання для активації
     const activationLink = `${this.configService.get('FRONT_URL')}/activate/${token}`;
-    //const activationLink = `${frontUrl}/activate/${activationToken}`;
     const userDto = new UserResponseDto(savedUser);
 
     // 6. Повертаємо користувача + лінк для фронту
@@ -133,15 +135,15 @@ export class AuthService {
     const payload = this.jwtService.verify(dto.token, {
       secret: this.configService.get('JWT_SECRET'),
     });
-
     if (!payload || payload.token_type !== 'activate') {
-      throw new ForbiddenException('Invalid activation token');
+      throw new ForbiddenException('Неправильний токен активації');
     }
 
     const user = await this.userRepo.findOne({ where: { id: payload.userId } });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException('Користувач не знайдений');
 
     user.password = await bcrypt.hash(dto.password, 10);
+    //user.password = dto.password;
     user.isActive = true;
 
     return this.userRepo.save(user);
@@ -149,6 +151,10 @@ export class AuthService {
 
   async refresh(refreshToken: string): Promise<ITokens> {
     try {
+      this.jwtService.verify(refreshToken, {
+        secret: this.configService.get('JWT_SECRET'),
+      });
+
       // Перевіряємо refreshToken
       const tokenEntity = await this.tokenRepository.findOne({
         where: { refreshToken, isBlocked: false },
@@ -156,7 +162,7 @@ export class AuthService {
       });
 
       if (!tokenEntity) {
-        throw new UnauthorizedException('Invalid refresh token');
+        throw new UnauthorizedException('Недійсний токен');
       }
 
       // Новий jti
@@ -193,7 +199,9 @@ export class AuthService {
         refreshToken: newRefreshToken,
       };
     } catch {
-      throw new UnauthorizedException('Refresh token expired or invalid');
+      throw new UnauthorizedException(
+        'Термін дії токена оновлення минув або він недійсний.',
+      );
     }
   }
 
@@ -201,8 +209,8 @@ export class AuthService {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) return null;
 
-    const dto = plainToInstance(UserResponseDto, user);
-    return instanceToPlain(dto);
+    //const dto = plainToInstance(UserResponseDto, user);
+    return instanceToPlain(new UserResponseDto(user));
   }
 
   private async saveTokens(
@@ -231,27 +239,33 @@ export class AuthService {
     email: string,
     password: string,
   ): Promise<UserEntity> {
+    console.log('LOGIN TRY:', { email, password });
     if (!email || !password) {
-      throw new BadRequestException('Email and password are required');
+      throw new BadRequestException('Пошта або пароль не валідні');
     }
 
     //Дістає користувача з БД через
-    const user = await this.userRepo.findOne({
-      where: { email },
-      relations: ['tokens'],
-    }); //Викликає метод моделі user.validatePassword(password) (bcrypt.compare)
+    const user = await this.userRepo
+      .createQueryBuilder('user')
+      .addSelect('user.password')
+      .leftJoinAndSelect('user.tokens', 'tokens')
+      .where('user.email = :email', { email })
+      .getOne();
 
     if (!user) {
-      throw new UnauthorizedException('Email and password are required'); //Якщо користувача нема або пароль неправильний → кидає:
+      throw new UnauthorizedException("Пошта та пароль обов'язкові"); //Якщо користувача нема або пароль неправильний → кидає:
     }
 
     if (user.isBanned) {
-      throw new UnauthorizedException('User is banned');
+      throw new UnauthorizedException('Користувач забанений');
+    }
+    if (!user.isActive) {
+      throw new UnauthorizedException('Акаунт не активований');
     }
 
     const isPasswordValid = await user.validatePassword(password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Недійсні дані');
     }
     return user;
   }

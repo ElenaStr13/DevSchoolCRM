@@ -1,19 +1,19 @@
 import { Exclude, Expose } from 'class-transformer';
 import { UserEntity } from '../entities/user.entity';
-import { Column } from 'typeorm';
 
+@Exclude()
 export class UserResponseDto {
+  @Expose()
   id: number;
+
+  @Expose()
   email: string;
 
-  @Exclude()
-  password: string;
-
-  @Column()
+  @Expose()
   name: string;
 
-  @Column()
-  surname: string;
+  @Expose()
+  surname?: string;
 
   @Expose()
   role: string;
@@ -23,7 +23,11 @@ export class UserResponseDto {
     return `${this.name} ${this.surname}`.trim();
   }
 
-  constructor(partial: Partial<UserEntity>) {
-    Object.assign(this, partial);
+  constructor(user: UserEntity) {
+    this.id = user.id;
+    this.email = user.email;
+    this.name = user.name;
+    this.surname = user.surname;
+    this.role = user.role;
   }
 }

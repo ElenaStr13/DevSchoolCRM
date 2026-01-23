@@ -38,8 +38,6 @@ export class OrdersController {
     @Query() query: PaginationQueryDto,
     @Req() req: AuthRequest,
   ) {
-    console.log('CONTROLLER RAW QUERY:', query);
-    console.log('CONTROLLER manager:', query.manager, typeof query.manager);
     return this.ordersService.findPaginated(query, req.user as AuthUser);
   }
 

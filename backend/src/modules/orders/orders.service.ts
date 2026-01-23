@@ -45,45 +45,77 @@ export class OrdersService {
 
   // заявки з пагінацією
   async findPaginated(query: PaginationQueryDto, user: AuthUser) {
-    const {
-      page = 1,
-      take = 25,
-      sortBy = 'created_at',
-      order = 'DESC',
-      onlyMy,
-      managerId,
-    } = query;
+    try {
+      const {
+        page = 1,
+        take = 25,
+        sortBy = 'created_at',
+        order = 'DESC',
+        onlyMy,
+        managerId,
+      } = query;
 
-    const qb = this.orderRepository
-      .createQueryBuilder('o')
-      .leftJoinAndSelect('o.group', 'group')
-      .leftJoinAndSelect('o.managerUser', 'manager');
+      console.log('=== findPaginated START ===');
+      console.log('Raw query object:', query);
+      console.log('Parsed values:', {
+        page,
+        take,
+        sortBy,
+        order,
+        onlyMy: onlyMy !== undefined ? String(onlyMy) : undefined,
+        managerId,
+        userRole: user.role,
+        userId: user.id,
+      });
 
-    OrdersFilterBuilder.apply(qb, query);
+      const qb = this.orderRepository
+        .createQueryBuilder('o')
+        .leftJoinAndSelect('o.group', 'group')
+        .leftJoin('o.managerUser', 'manager');
+      //.leftJoinAndSelect('o.managerUser', 'manager');
 
-    OrdersManagerFilter.apply(
-      qb,
-      user,
-      managerId ? Number(managerId) : undefined,
-      ['true', '1'].includes(String(onlyMy)),
-    );
+      // Лог після створення базового query builder (до фільтрів)
+      console.log('Base SQL (before filters):', qb.getQueryAndParameters());
 
-    // Сортування
-    qb.orderBy(`o.${sortBy}`, order);
+      OrdersFilterBuilder.apply(qb, query);
 
-    // Пагінація
-    qb.skip((page - 1) * take).take(take);
+      OrdersManagerFilter.apply(
+        qb,
+        user,
+        managerId ? Number(managerId) : undefined,
+        ['true', '1'].includes(String(onlyMy)),
+      );
 
-    const [items, total] = await qb.getManyAndCount();
-    // console.log('ROLE:', user.role);
-    // console.log('RAW onlyMy:', onlyMy);
-    // console.log('PARSED onlyMy:', ['true', '1'].includes(String(onlyMy)));
-    return {
-      items,
-      total,
-      page,
-      take,
-    };
+      // Сортування
+      qb.orderBy(`o.${sortBy}`, order);
+
+      // Перевірка на ILIKE (якщо все ще з'являється — побачимо)
+      if (qb.getQuery().toUpperCase().includes('ILIKE')) {
+        console.error(
+          '!!! ILIKE ВСЕ ЩЕ ПРИСУТНІЙ В SQL! Перевір код фільтрів.',
+        );
+      }
+
+      // Пагінація
+      qb.skip((page - 1) * take).take(take);
+      console.log('SQL before execution:', qb.getQueryAndParameters());
+      const [items, total] = await qb.getManyAndCount();
+
+      return {
+        items,
+        total,
+        page,
+        take,
+      };
+    } catch (error) {
+      const err = error as Error;
+      console.error('CRASH IN findPaginated');
+      console.error('Query params:', query);
+      console.error('Error message:', err.message);
+      console.error('Error stack:', err.stack);
+      console.error('Full error:', err);
+      throw err;
+    }
   }
 
   async getAllForExport() {
@@ -162,20 +194,58 @@ export class OrdersService {
     dto: Partial<OrdersEntity>,
     userRole: 'admin' | 'manager',
     userName: string,
-  ) {
+  ): Promise<OrdersEntity> {
     const order = await this.orderRepository.findOne({
       where: { id },
-      relations: ['group'],
+      relations: ['managerUser', 'group'], // важливо, якщо managerUser — це relation
     });
 
     if (!order) {
       throw new NotFoundException(`Order with id=${id} not found`);
     }
-
-    if (userRole === 'manager' && order.manager && order.manager !== userName) {
-      throw new ForbiddenException(`You cannot edit this order`);
+    let statusExplicitlySetToNew = false;
+    // менеджер не може міняти чужу заявку
+    if (userRole === 'manager') {
+      if (order.managerUser && order.managerUser.name !== userName) {
+        throw new ForbiddenException('Ви не можете змінювати цю заявку');
+      }
     }
-    Object.assign(order, dto);
+
+    //  1. якщо статус New → знімаємо менеджера
+    if (dto.status === 'New' && order.status !== 'New') {
+      order.status = 'New';
+      order.managerUser = null;
+      order.manager = null;
+      statusExplicitlySetToNew = true;
+    }
+    // Звичайне оновлення полів (крім спеціальних)
+    //Object.assign(order, dto);
+    const { status, manager, managerUser, group, groupName, ...safeFields } =
+      dto;
+    Object.assign(order, safeFields);
+
+    // Якщо заявка була без менеджера і редагує саме менеджер → призначаємо його
+    if (
+      userRole === 'manager' &&
+      !order.managerUser &&
+      //(!order.status || order.status === 'New') &&
+      !statusExplicitlySetToNew
+    ) {
+      const manager = await this.userRepository.findOne({
+        where: { name: userName, role: 'manager' },
+      });
+
+      if (manager) {
+        order.managerUser = manager;
+        order.manager = userName; // синхронізуємо строкове поле
+        // Якщо статус був New або відсутній → переводимо в роботу
+        if (!order.status || order.status === 'New') {
+          order.status = 'In work';
+        }
+      }
+    }
+
+    //  group
     if (dto.groupName) {
       let group = await this.groupRepository.findOne({
         where: { name: dto.groupName },
@@ -185,31 +255,12 @@ export class OrdersService {
         group = this.groupRepository.create({ name: dto.groupName });
         await this.groupRepository.save(group);
       }
+
       order.group = group;
       order.groupName = group.name;
     }
-    console.log('Updating order group:', {
-      orderId: order.id,
-      groupName: order.groupName,
-    });
-    if (dto.groupName) {
-      order.groupName = dto.groupName;
-    }
 
-    await this.orderRepository.save(order);
-
-    const updated = await this.orderRepository.findOne({
-      where: { id: order.id },
-      relations: ['group'],
-    });
-    if (!updated) {
-      throw new NotFoundException(`Order with id=${id} not found after update`);
-    }
-
-    return {
-      ...updated,
-      groupName: updated.group?.name ?? null,
-    };
+    return await this.orderRepository.save(order);
   }
 
   async updateStatus(id: number, status: string) {
@@ -235,7 +286,7 @@ export class OrdersService {
 
     if (!isAdmin) {
       if (order.manager && order.manager !== author) {
-        throw new ForbiddenException(`You cannot comment on this order`);
+        throw new ForbiddenException(`Ви не можете коментувати цю заявку`);
       }
       if (!order.manager) {
         order.manager = author;

@@ -4,10 +4,11 @@ import { StyledPagination, PageButton } from "../Orders/Orders.styles";
 interface PaginationProps {
     page: number;
     totalPages: number;
+    //pageSize: number;
     onPageChange: (page: number) => void;
 }
 
-export default function Pagination({ page, totalPages, onPageChange }: PaginationProps) {
+export default function Pagination({ page, totalPages,  onPageChange }: PaginationProps) {
     if (totalPages <= 1) return null;
 
     const buttons: React.ReactNode[] = [];

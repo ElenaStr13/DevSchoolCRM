@@ -27,7 +27,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: IJWTPayload) {
+  async validate(
+    payload: IJWTPayload,
+    done: (err: any, user: any, info?: any) => void,
+  ) {
     //Розшифровує токен, отримує payload
     try {
       const tokenEntity = await this.tokenRepository.findOne({

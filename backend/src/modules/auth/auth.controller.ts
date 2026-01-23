@@ -17,6 +17,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { RefreshDto } from './interfaces/refresh.dto';
 import { User } from '../../decorators/user.decorator';
 import { SetPasswordDto } from './dto/set-password.dto';
+import { Public } from '../../decorators/public.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -24,7 +25,7 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() loginDto: LoginDto): Promise<ITokens> {
-    return this.authService.login(loginDto); // викликає метод authService.login(loginDto)
+    return this.authService.login(loginDto);
   }
 
   @Post('register')
@@ -53,5 +54,4 @@ export class AuthController {
   async getMe(@User('id') userId: number) {
     return this.authService.me(userId);
   }
-
 }

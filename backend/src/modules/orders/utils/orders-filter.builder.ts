@@ -7,68 +7,73 @@ export class OrdersFilterBuilder {
     qb: SelectQueryBuilder<OrdersEntity>,
     query: PaginationQueryDto,
   ) {
+    console.log('OrdersFilterBuilder - input query:', query);
+    const textFields = [
+      'surname',
+      'email',
+      'phone',
+      'manager',
+      'groupName',
+    ] as const;
+
     if (query.name?.trim()) {
+      const value = query.name.trim();
+      console.log('Applying name filter:', value);
       qb.andWhere('LOWER(o.name) LIKE :name', {
-        name: `%${query.name.trim().toLowerCase()}%`,
+        name: `%${value.toLowerCase()}%`,
       });
     }
 
-    if (query.surname?.trim()) {
-      qb.andWhere('LOWER(o.surname) LIKE :surname', {
-        surname: `%${query.surname.trim().toLowerCase()}%`,
-      });
-    }
+    textFields.forEach((field) => {
+      const raw = query[field];
+      if (raw === undefined || raw === null) return;
 
-    if (query.email?.trim()) {
-      qb.andWhere('LOWER(o.email) LIKE :email', {
-        email: `%${query.email.trim().toLowerCase()}%`,
-      });
-    }
+      const value = String(raw).trim();
+      if (!value) return;
 
-    if (query.phone?.trim()) {
-      qb.andWhere('o.phone LIKE :phone', {
-        phone: `%${query.phone.trim()}%`,
-      });
-    }
+      const paramValue = `%${value.toLowerCase()}%`;
 
-    if (query.age && Number(query.age) > 0) {
+      // Для MySQL використовуємо LOWER()
+      if (field === 'groupName') {
+        qb.andWhere('LOWER(group.name) LIKE :gn', { gn: paramValue });
+      } else if (field === 'manager') {
+        qb.andWhere('LOWER(o.manager) LIKE :mgr', { mgr: paramValue });
+      } else if (field === 'phone') {
+        qb.andWhere('o.phone LIKE :ph', { ph: `%${value}%` }); // телефон без LOWER
+      } else {
+        qb.andWhere(`LOWER(o.${field}) LIKE :${field}`, {
+          [field]: paramValue,
+        });
+      }
+    });
+
+    const exactFields = [
+      'course',
+      'course_format',
+      'course_type',
+      'status',
+    ] as const;
+    exactFields.forEach((field) => {
+      const value = query[field]?.toString()?.trim();
+      if (value) {
+        qb.andWhere(`o.${field} = :${field}`, { [field]: value });
+      }
+    });
+
+    if (query.age && !isNaN(Number(query.age))) {
       qb.andWhere('o.age = :age', { age: Number(query.age) });
-    }
-
-    if (query.course?.trim()) {
-      qb.andWhere('o.course = :course', {
-        course: query.course.trim(),
-      });
-    }
-
-    if (query.course_format?.trim()) {
-      qb.andWhere('o.course_format = :course_format', {
-        course_format: query.course_format.trim(),
-      });
-    }
-
-    if (query.course_type?.trim()) {
-      qb.andWhere('o.course_type = :course_type', {
-        course_type: query.course_type.trim(),
-      });
-    }
-
-    if (query.groupName?.trim()) {
-      qb.andWhere('LOWER(group.name) LIKE :groupName', {
-        groupName: `%${query.groupName.trim().toLowerCase()}%`,
-      });
-    }
-
-    if (query.status) {
-      qb.andWhere('o.status = :status', { status: query.status });
     }
 
     if (query.search?.trim()) {
       const q = `%${query.search.trim().toLowerCase()}%`;
       qb.andWhere(
-        `(LOWER(o.name) LIKE :q OR LOWER(o.surname) LIKE :q OR LOWER(o.email) LIKE :q OR o.phone LIKE :q)`,
+        'LOWER(o.name) LIKE :q OR LOWER(o.surname) LIKE :q OR LOWER(o.email) LIKE :q OR o.phone LIKE :q',
         { q },
       );
     }
+    console.log(
+      'OrdersFilterBuilder - applied filters count:',
+      qb.expressionMap.wheres?.length || 0,
+    );
   }
 }

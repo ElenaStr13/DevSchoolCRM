@@ -52,8 +52,8 @@ export class OrdersEntity {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
 
-  @Column({ nullable: true })
-  manager: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  manager: string | null;
 
   @Column('json', { nullable: true })
   comments?: { author: string; text: string; createdAt: string }[];
@@ -73,5 +73,5 @@ export class OrdersEntity {
 
   @ManyToOne(() => UserEntity, { nullable: true })
   @JoinColumn({ name: 'managerId' })
-  managerUser?: UserEntity;
+  managerUser?: UserEntity | null;
 }
