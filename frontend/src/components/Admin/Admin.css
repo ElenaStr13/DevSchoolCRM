@@ -1,4 +1,4 @@
-/* 🔹 PAGE */
+/* PAGE */
 .admin-page {
     background-color: #f5f6f8;
     min-height: 100vh;
@@ -7,7 +7,7 @@
     padding: 40px 0;
 }
 
-/* 🔹 CONTAINER */
+/* CONTAINER */
 .admin-container {
     background: #fff;
     border-radius: 16px;
@@ -17,7 +17,7 @@
     box-shadow: 0 6px 30px rgba(0, 0, 0, 0.08);
 }
 
-/* 🔹 HEADER */
+/*  HEADER */
 .admin-header {
     display: flex;
     justify-content: space-between;
@@ -29,20 +29,20 @@
     font-weight: 600;
 }
 
-/* 🔹 BUTTON */
+/* BUTTON */
 .add-manager-btn {
     border-radius: 10px;
     padding: 10px 22px;
 }
 
-/* 🔹 SECTIONS */
+/* SECTIONS */
 .section-title {
     font-size: 18px;
     margin: 24px 0 12px;
     font-weight: 600;
 }
 
-/* 🔹 STATS */
+/*  STATS */
 .stats-wrapper {
     display: flex;
     gap: 16px;
@@ -61,7 +61,7 @@
     font-weight: 700;
 }
 
-/* 🔹 TABLE */
+/* TABLE */
 .admin-table {
     border-radius: 12px;
     overflow: hidden;
@@ -82,7 +82,7 @@
     background-color: #f9fafb;
 }
 
-/* 🔹 STATUS BADGES */
+/*  STATUS BADGES */
 .status-badge {
     padding: 4px 10px;
     border-radius: 12px;
@@ -101,7 +101,7 @@
     color: #dc5956;
 }
 
-/* 🔹 ACTIONS */
+/* ACTIONS */
 .actions {
     display: flex;
     gap: 6px;
@@ -113,7 +113,7 @@
     padding: 4px 10px;
 }
 
-/* 🔹 LOADER */
+/* LOADER */
 .admin-loader {
     display: flex;
     justify-content: center;
@@ -132,5 +132,14 @@
 .pagination .MuiPaginationItem-root {
     border-radius: 10px;
     font-weight: 500;
-    color: #4CAF50;
+    color: #70e174;
+}
+
+.pagination .Mui-selected {
+    background-color: #70e174 !important;
+    color: white ;
+}
+
+.pagination .MuiPaginationItem-root:hover {
+    background-color: rgba(70, 166, 74, 0.45);
 }

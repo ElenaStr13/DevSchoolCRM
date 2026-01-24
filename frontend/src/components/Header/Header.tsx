@@ -70,7 +70,13 @@ export default function Header() {
                         <Button
                             variant="outlined"
                             onClick={() => navigate('/orders')}
-                            sx={{ textTransform: 'none' }}
+                            sx={{
+                                textTransform: 'none',
+                                    backgroundColor: '#5ae0c1',
+                                    '&:hover': {
+                                        backgroundColor: '#4aaf4e',
+                                    },
+                            }}
                         >
                             До заявок
                         </Button>
@@ -81,7 +87,13 @@ export default function Header() {
                             variant="contained"
                             color="info"
                             onClick={() => navigate('/admin')}
-                            sx={{ textTransform: 'none' }}
+                            sx={{
+                                textTransform: 'none',
+                                backgroundColor: '#5ae0c1',
+                                '&:hover': {
+                                    backgroundColor: '#4aaf4e',
+                                },
+                        }}
                         >
                             Admin
                         </Button>

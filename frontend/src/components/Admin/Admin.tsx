@@ -283,9 +283,6 @@ export default function Admin() {
                     />
                 </Box>
 
-
-
-
                 {/*  MODALS / SNACKBAR */}
                 <Dialog open={open} onClose={() => setOpen(false)}>
                     <DialogTitle>Створити менеджера</DialogTitle>
