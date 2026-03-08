@@ -7,6 +7,7 @@ import {
   Query,
   Body,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ManagersService } from './managers.service';
 import { PaginationDto } from './dto/pagination.dto';
@@ -36,7 +37,7 @@ export class ManagersController {
 
   @Get('statistics/:id')
   @Roles('admin')
-  getStatistics(@Param('id') id: number) {
+  getStatistics(@Param('id', ParseIntPipe) id: number) {
     return this.managersService.getManagerStatistics(Number(id));
   }
 

@@ -3,7 +3,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from '../auth/entities/user.entity';
 import { OrdersEntity } from '../orders/entities/orders.entity';
@@ -29,7 +29,9 @@ export class ManagersService {
     const skip = (page - 1) * take;
 
     const [managers, total] = await this.userRepository.findAndCount({
-      where: { role: 'manager' },
+      where: {
+        role: In(['manager', 'admin']),
+      },
       order: { id: 'DESC' },
       skip,
       take,
@@ -66,7 +68,11 @@ export class ManagersService {
   ): Promise<Record<string, number>> {
     // 1. знайти менеджера
     const user = await this.userRepository.findOne({
-      where: { id: managerId, role: 'manager' },
+      where: {
+        id: managerId,
+        role: In(['manager', 'admin']),
+      },
+      //where: { id: managerId, role: 'manager' },
     });
 
     if (!user) {

@@ -46,7 +46,7 @@ export class AuthService {
 
     const payload = {
       //Формує payload
-      userId: user.id,
+      id: user.id,
       email: user.email,
       role: user.role,
       name: user.name,
@@ -71,6 +71,7 @@ export class AuthService {
       this.refreshTokenExpiresIn,
       jti,
     );
+
     await this.deleteExpiredTokens();
 
     return {
@@ -168,7 +169,7 @@ export class AuthService {
       // Новий jti
       const jti = randomUUID();
       const newPayload = {
-        userId: tokenEntity.user.id,
+        id: tokenEntity.user.id,
         email: tokenEntity.user.email,
         role: tokenEntity.user.role,
         jti,
@@ -205,8 +206,8 @@ export class AuthService {
     }
   }
 
-  async me(userId: number): Promise<Partial<UserResponseDto> | null> {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
+  async me(id: number): Promise<Partial<UserResponseDto> | null> {
+    const user = await this.userRepo.findOne({ where: { id: id } });
     if (!user) return null;
 
     //const dto = plainToInstance(UserResponseDto, user);

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useRef } from "react";
 import {
     Box,
     TextField,
@@ -13,24 +14,34 @@ import { StatusEnum, CourseEnum, CourseFormatEnum, CourseTypeEnum } from "../../
 
 
 export interface OrdersFilterProps {
+    filters: Record<string, any>;
     onChange: (filters: Record<string, any>) => void;
 }
 
-export default function OrdersFilter({ onChange }: OrdersFilterProps) {
-    const [filters, setFilters] = useState<Record<string, string | number | undefined>>({});
-    const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
+export default function OrdersFilter({ filters, onChange }: OrdersFilterProps) {
+    //const [filters, setFilters] = useState<Record<string, string | number | undefined>>({});
+    //const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
+    const typingTimeout = useRef<NodeJS.Timeout | null>(null);
 
       const handleChange = (field: string, value: string | number | undefined) => {
         const updated = { ...filters, [field]: value };
-        setFilters(updated);
+        //setFilters(updated);
 
-        if (typingTimeout) clearTimeout(typingTimeout);
-        const timeout = setTimeout(() => onChange(updated), 600);
-        setTypingTimeout(timeout);
+
+          if (typingTimeout.current) {
+              clearTimeout(typingTimeout.current);
+          }
+
+          typingTimeout.current = setTimeout(() => {
+              onChange(updated);
+          }, 600);
+
+          //const timeout = setTimeout(() => onChange(updated), 600);
+        //setTypingTimeout(timeout);
     };
 
     const handleReset = () => {
-        setFilters({});
+        //setFilters({});
         onChange({});
     };
 
@@ -135,7 +146,7 @@ export default function OrdersFilter({ onChange }: OrdersFilterProps) {
                             const updated = { ...filters };
                             if (e.target.checked) updated.onlyMy = "true";
                             else delete updated.onlyMy;
-                            setFilters(updated);
+                            //setFilters(updated);
                             onChange(updated);
                             //onFilterChange(updated);
                         }}

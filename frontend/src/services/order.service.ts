@@ -44,22 +44,9 @@ export class OrdersService {
     static async updateOrder(
         orderId: number,
         data: Partial<OrderDto>,
-        currentUser?: { name: string; role: string }
+
     ) {
-
-        const res = await api.patch(
-            `/orders/${orderId}`,
-            data,
-            currentUser
-                ? {
-                    headers: {
-                        "x-user-name": currentUser.name,
-                        "x-user-role": currentUser.role,
-                    },
-                }
-                : undefined
-        );
-
+        const res = await api.patch(`/orders/${orderId}`, data);
         return res.data;
     }
 
@@ -84,9 +71,9 @@ export class OrdersService {
         );
     }
 
-    static async assignManager(orderId: number, managerName: string) {
+    static async assignManager(orderId: number, managerId: number) {
         const res = await api.patch(`/orders/${orderId}/manager`, {
-            manager: managerName
+            managerId
         });
         return res.data;
     }

@@ -35,7 +35,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
 
     const validatePassword = (value: string) => {
         if (value.length < 5) {
-            return 'Пароль закороткий';
+            return 'пароль некоректний';
         }
         return true;
     };

@@ -27,7 +27,10 @@ import "./Admin.css";
 import {Manager} from "../../types/manager.type";
 
 export default function Admin() {
-    const [stats, setStats] = useState<Record<string, number> | null>(null);
+
+    type OrdersStatistics = Record<string, number>;
+
+    const [stats, setStats] = useState<OrdersStatistics | null>(null);
     const [loading, setLoading] = useState(true);
     const [open, setOpen] = useState(false);
     const [managers, setManagers] = useState<any[]>([]);
@@ -65,6 +68,7 @@ export default function Admin() {
 
                 const statsData = await AdminService.getStatistics();
                 setStats(statsData);
+                //setManagerStats(managerStats);
                 await loadManagers(page);
             } catch (err) {
                 console.error("Помилка завантаження:", err);
@@ -295,8 +299,8 @@ export default function Admin() {
                                    onChange={e => setForm({ ...form, surname: e.target.value })}/>
                     </DialogContent>
                     <DialogActions>
-                        <Button onClick={() => setOpen(false)}>Cancel</Button>
-                        <Button variant="contained" onClick={handleCreateManager}>Create</Button>
+                        <Button onClick={() => setOpen(false)}>Відміна</Button>
+                        <Button variant="contained" onClick={handleCreateManager}>Створити</Button>
                     </DialogActions>
                 </Dialog>
 

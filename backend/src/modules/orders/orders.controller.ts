@@ -10,6 +10,7 @@ import {
   Req,
   Put,
   Res,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { Roles } from '../../decorators/roles.decorator';
 import { RolesGuard } from '../../guards/roles.guard';
@@ -27,7 +28,7 @@ import { UpdateManagerDto } from './entities/update-manager.dto';
 import { AuthUser } from '../auth/interfaces/auth-user.interface';
 
 @Controller('orders')
-@UseGuards(JwtAuthGuard, RolesGuard) //Користувач відправляє запит з токеном
+@UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
@@ -54,10 +55,7 @@ export class OrdersController {
   }
 
   @Post('export')
-  async exportExcel(
-    // @Body() filters: Record<string, any>,
-    @Res() res: Response,
-  ) {
+  async exportExcel(@Res() res: Response) {
     const buffer = await this.ordersService.generateExcel();
 
     res.set({
@@ -70,7 +68,7 @@ export class OrdersController {
   }
 
   @Get('my')
-  @Roles('manager')
+  @Roles('manager', 'admin')
   async findMyOrders(
     @Req() req: AuthRequest,
     @Query() query: PaginationQueryDto,
@@ -97,7 +95,7 @@ export class OrdersController {
   @Patch(':id/manager')
   @Roles('admin')
   async assignManager(@Param('id') id: number, @Body() dto: UpdateManagerDto) {
-    return this.ordersService.assignManager(id, dto.manager);
+    return this.ordersService.assignManager(id, dto.managerId);
   }
 
   @Post(':id/comments')
@@ -107,38 +105,44 @@ export class OrdersController {
     @Body() dto: AddCommentDto,
     @Req() req: AuthRequest,
   ) {
-    const { user } = req;
-    const isAdmin = user.role === 'admin';
-    return this.ordersService.addComment(id, user.name, dto.text, isAdmin);
+    return this.ordersService.addComment(id, req.user.id, dto.text);
+    // const { user } = req;
+    // const isAdmin = user.role === 'admin';
+    // return this.ordersService.addComment(id, user.name, dto.text, isAdmin);
   }
 
   @Patch(':id')
   @Roles('admin', 'manager')
   async update(
-    @Param('id') id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateOrderDto,
     @Req() req: AuthRequest,
   ) {
     const { user } = req;
-
-    return this.ordersService.update(id, dto, user.role, user.name);
+    console.log('REQ.USER IN UPDATE:', req.user);
+    return this.ordersService.update(id, dto, user.role, user.id);
+    //return this.ordersService.update(id, dto, user.role, user.name);
   }
 
   @Patch(':id/status')
   @Roles('admin', 'manager')
-  async updateStatus(@Param('id') id: number, @Body() dto: UpdateStatusDto) {
-    return this.ordersService.updateStatus(id, dto.status);
+  async updateStatus(
+    @Param('id') id: number,
+    @Body() dto: UpdateStatusDto,
+    @Req() req: AuthRequest,
+  ) {
+    return this.ordersService.updateStatus(id, dto.status, req.user.id);
   }
 
-  @Patch(':id/comment')
-  @Roles('admin', 'manager')
-  async addComment(
-    @Param('id') id: number,
-    @Body() dto: AddCommentDto,
-    @Req() req: AuthRequest, // тут беремо поточного користувача
-  ) {
-    const { user } = req; // наприклад user.name або user.username
-    const isAdmin = user.role === 'admin';
-    return this.ordersService.addComment(id, user.name, dto.text, isAdmin);
-  }
+  // @Patch(':id/comment')
+  // @Roles('admin', 'manager')
+  // async addComment(
+  //   @Param('id') id: number,
+  //   @Body() dto: AddCommentDto,
+  //   @Req() req: AuthRequest, // тут беремо поточного користувача
+  // ) {
+  //   //const { user } = req; // наприклад user.name або user.username
+  //   //const isAdmin = user.role === 'admin';
+  //   return this.ordersService.addComment(id, req.user.id, dto.text);
+  // }
 }

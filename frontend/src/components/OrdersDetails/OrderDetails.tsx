@@ -5,7 +5,8 @@ import "./OrderDetails.css";
 
 interface OrderDetailsProps {
     order: OrderDto;
-    currentUser: { name: string; role: string };
+    //currentUser: { name: string; role: string };
+    currentUser: { id: number; name: string; surname?: string; role: string };
     onAddComment: (orderId: number, comment: string) => Promise<{ author: string; text: string; createdAt: string }>;
     onEditOpen: (order: OrderDto) => void;
 }
@@ -15,9 +16,13 @@ export default function OrderDetails({ order, currentUser, onAddComment, onEditO
     const [comment, setComment] = useState("");
 
 
-    const canComment =
-        !orderState.manager || orderState.manager === currentUser.name || currentUser.role === "admin";
-    const canEdit = !orderState.manager || orderState.manager === currentUser.name;
+    const currentUserId = Number(currentUser.id);
+    const managerUserId = orderState.managerUser?.id ? Number(orderState.managerUser.id) : null;
+
+    const isOwner = managerUserId === currentUserId;
+
+    const canEdit = !managerUserId || isOwner || currentUser.role === "admin";
+    const canComment = !managerUserId || isOwner || currentUser.role === "admin";
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -31,7 +36,15 @@ export default function OrderDetails({ order, currentUser, onAddComment, onEditO
             setOrder(prev => ({
                 ...prev,
                 comments: prev.comments ? [...prev.comments, newComment] : [newComment],
-                manager: prev.manager || currentUser.name,
+
+                managerUser: prev.managerUser || {
+                    id: currentUserId,
+                    name: currentUser.name,
+                    surname: currentUser.surname ?? "",
+                },
+                manager: prev.manager || `${currentUser.name} ${currentUser.surname ?? ""}`.trim(),
+
+                //manager: prev.manager || currentUser.name,
                 status: prev.status === null || prev.status === "New" ? "In Work" : prev.status,
             }));
             setComment("");
@@ -66,7 +79,12 @@ export default function OrderDetails({ order, currentUser, onAddComment, onEditO
 
                 <div>
                     <span className="details-label">Менеджер: </span>
-                    <span className="details-value">{orderState.manager || "—"}</span>
+                    <span className="details-value">
+  {orderState.managerUser
+      ? `${orderState.managerUser.name} ${orderState.managerUser.surname ?? ""}`.trim()
+      : (orderState.manager || "—")}
+</span>
+                    {/*<span className="details-value">{orderState.manager || "—"}</span>*/}
                 </div>
             </div>
 

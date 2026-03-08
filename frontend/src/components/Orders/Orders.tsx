@@ -14,23 +14,27 @@ import OrdersFilter from "../../components/OrdersFilter/OrdersFilter";
 import { AdminService } from "../../services/admin.service";
 import {Manager} from "../../types/manager.type";
 import { useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
 export default function Orders() {
     const navigate = useNavigate();
 
     const [orders, setOrders] = useState<OrderDto[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filters, setFilters] = useState<Partial<PaginationQueryDto>>({});
-    const [take, ] = useState(25);
-    const [page, setPage] = useState(1);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const filters = Object.fromEntries(searchParams.entries());
+    const page = Number(searchParams.get("page")) || 1;
+    const take = Number(searchParams.get("take")) || 25;
+    const sortBy = searchParams.get("sortBy") || "id";
+    const order = (searchParams.get("order") as "ASC" | "DESC") || "ASC";
     const [total, setTotal] = useState(0);
-    const [sortBy, setSortBy] = useState<string>("id");
-    const [order, setOrder] = useState<"ASC" | "DESC">("ASC");
     const [selectedOrder, setSelectedOrder] = useState<OrderDto | null>(null);
     const detailsRef = useRef<HTMLDivElement | null>(null);
-    const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+    const currentUserRaw = JSON.parse(localStorage.getItem("user") || "{}");
+    const currentUser = { ...currentUserRaw, id: Number(currentUserRaw.id) };
+    //const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
     const [editOpen, setEditOpen] = useState(false);
-    const [managersList, setManagersList] = useState<Manager[]>([]);
+
 
     const [statsModalOpen, setStatsModalOpen] = useState(false);
     const [currentManager, ] = useState<Manager | null>(null);
@@ -38,88 +42,49 @@ export default function Orders() {
 
     const totalPages = Math.ceil(total / take);
 
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-
-        const nextFilters: Record<string, any> = {};
-
-        const allowedFilterKeys = [
-            'name',
-            'surname',
-            'email',
-            'phone',
-            'age',
-            'course',
-            'course_format',
-            'course_type',
-            'status',
-            'search',
-            'manager',
-            'groupName',
-            'onlyMy',
-            'managerId',
-        ];
-
-        params.forEach((value, key) => {
-            if (key === 'page') setPage(Number(value));
-            // else if (key === 'take') setTake(Number(value));
-            else if (key === 'sortBy') setSortBy(value);
-            else if (key === 'order') setOrder(value as 'ASC' | 'DESC');
-            else if (allowedFilterKeys.includes(key)) {
-                nextFilters[key] = isNaN(Number(value)) ? value : Number(value);
-            }
-        });
-
-        setFilters(nextFilters);
-    }, []);
-
-
-    // Завантаження заявок
+        // Завантаження заявок
     useEffect(() => {
         const fetchOrders = async () => {
             try {
-                const cleanedFilters = Object.fromEntries(
-                    Object.entries(filters).filter(([_, v]) => v != null && v !== '')
-                );
-                const { page: _p, take: _t, sortBy: _s, order: _o, ...safeFilters } = filters;
-                const query: PaginationQueryDto = { page, take, sortBy, order, ...cleanedFilters };
+                const query: PaginationQueryDto = {
+                    page,
+                    take,
+                    sortBy,
+                    order,
+                    ...filters,
+                };
 
+                // const response = await OrdersService.findPaginated(query);
                 const { data, totalCount } = await OrdersService.findPaginated(query);
 
-                 setOrders(data);
-                 setTotal(totalCount);
 
-                const params = new URLSearchParams(
-                    Object.entries({
-                        page,
-                        take,
-                        sortBy,
-                        order,
-                        ...filters,
-                    })
-                        .filter(([_, v]) => v !== undefined && v !== null && v !== '')
-                        .map(([k, v]) => [k, String(v)])
-                );
+                // setOrders(response.item);
+                // setTotal(response.total);
 
-                navigate({ search: params.toString() }, { replace: true });
+                setOrders(data);
+                setTotal(totalCount);
             } catch (error) {
-                console.error("Помилка завантаження заявок:", error);
+                console.error(error);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchOrders();
-    }, [page, take, sortBy, order, filters]);
+    }, [searchParams]);
 
-    // Обробка сортування
+   // Обробка сортування
     const handleSort = (column: string) => {
+        const params = Object.fromEntries(searchParams);
+
         if (sortBy === column) {
-            setOrder(order === "ASC" ? "DESC" : "ASC");
+            params.order = order === "ASC" ? "DESC" : "ASC";
         } else {
-            setSortBy(column);
-            setOrder("ASC");
+            params.sortBy = column;
+            params.order = "ASC";
         }
+
+        setSearchParams(params);
     };
 
     // Клік по рядку
@@ -171,9 +136,12 @@ export default function Orders() {
     };
 
     const handlePageChange = (newPage: number) => {
-        if (newPage > 0 && newPage <= totalPages) {
-            setPage(newPage);
-        }
+        const params = Object.fromEntries(searchParams);
+        params.page = String(newPage);
+        setSearchParams(params);
+        // if (newPage > 0 && newPage <= totalPages) {
+        //     setPage(newPage);
+        // }
     };
     const handleEditOpen = (order: OrderDto) => {
         setSelectedOrder(order);
@@ -181,38 +149,45 @@ export default function Orders() {
     };
 
     //список менеджерів
-    useEffect(() => {
-        const fetchManagers = async () => {
-            try {
-                const data = await AdminService.getAllManagers();
-                setManagersList(data);
-            } catch (e) {
-                console.error("Помилка завантаження менеджерів:", e);
-            }
-        };
+    // useEffect(() => {
+    //     const fetchManagers = async () => {
+    //         try {
+    //             const data = await AdminService.getAllManagers();
+    //             setManagersList(data);
+    //         } catch (e) {
+    //             console.error("Помилка завантаження менеджерів:", e);
+    //         }
+    //     };
+    //
+    //     if (currentUser.role === "admin") {
+    //         fetchManagers();
+    //     }
+    // }, []);
 
-        if (currentUser.role === "admin") {
-            fetchManagers();
-        }
-    }, []);
-
-    const handleAssignManager = async (orderId: number, managerName: string) => {
-        try {
-            await OrdersService.assignManager(orderId, managerName);
-
-            setOrders(prevOrders =>
-                prevOrders.map(order =>
-                    order.id === orderId ? { ...order, manager: managerName } : order
-                )
-            );
-        } catch (error) {
-            console.error("Помилка призначення менеджера:", error);
-        }
-    };
+    // const handleAssignManager = async (orderId: number, managerName: string) => {
+    //     try {
+    //         await OrdersService.assignManager(orderId, managerName);
+    //
+    //         setOrders(prevOrders =>
+    //             prevOrders.map(order =>
+    //                 order.id === orderId ? { ...order, manager: managerName } : order
+    //             )
+    //         );
+    //     } catch (error) {
+    //         console.error("Помилка призначення менеджера:", error);
+    //     }
+    // };
 
     const handleFilterChange = (newFilters: Record<string, any>) => {
-        setPage(1);        // скидаємо сторінку
-        setFilters(newFilters);
+
+        const params: Record<string, string> = {};
+        Object.entries(newFilters).forEach(([key, value]) => {
+            if (value !== undefined && value !== "") {
+                params[key] = String(value);
+            }
+        });
+        params.page = "1"; // скидаємо сторінку
+        setSearchParams(params);
     };
 
 
@@ -225,7 +200,7 @@ export default function Orders() {
 
     return (
         <Box sx={{ p: 2 }}>
-            <OrdersFilter onChange={handleFilterChange} />
+            <OrdersFilter filters={filters} onChange={handleFilterChange} />
             <TableContainer component={Paper}>
                 <Table>
                     <StyledTableHead>
@@ -275,25 +250,11 @@ export default function Orders() {
                                     <TableCell>{row.sum}</TableCell>
 
                                     <TableCell onClick={(e) => e.stopPropagation()}>
-                                        {currentUser.role === "admin" ? (
-                                            <select
-                                                value={row.manager || ""}
-                                                onMouseDown={(e) => e.stopPropagation()}
-                                                onClick={(e) => e.stopPropagation()}
-                                                onChange={(e) => handleAssignManager(row.id, e.target.value)}
-                                                style={{ padding: "4px", borderRadius: "4px" }}
-                                            >
-                                                <option value="">— Не призначено —</option>
-                                                {managersList.map((m: any) => (
-                                                    <option key={m.id} value={m.name}>
-                                                        {m.name.trim()}
-                                                        {/*{m.name} {m.surname}*/}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        ) : (
-                                            row.manager || "-"
-                                        )}
+                                        {/*{row.manager  || ""}*/}
+                                        {row.managerUser
+                                            ? `${row.managerUser.name} ${row.managerUser.surname ?? ""}`.trim()
+                                            : (row.manager || "")
+                                        }
                                     </TableCell>
 
                                     <TableCell>{row.group?.name || "-"}</TableCell>

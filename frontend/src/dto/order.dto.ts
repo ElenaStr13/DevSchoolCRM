@@ -1,3 +1,8 @@
+export type UserShortDto = {
+    id: number;
+    name?: string;
+    surname?: string | null;
+};
 export interface OrderDto {
     id: number;
     name: string;
@@ -13,6 +18,7 @@ export interface OrderDto {
     alreadyPaid: number;
     created_at: string;
     manager?: string | null;
+    managerUser?: UserShortDto | null;
     group?: { id: number; name: string } | null;
     message?: string | null;
     utm?: string | null;

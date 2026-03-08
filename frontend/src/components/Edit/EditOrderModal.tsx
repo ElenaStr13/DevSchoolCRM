@@ -22,7 +22,7 @@ interface EditOrderModalProps {
     open: boolean;
     onClose: () => void;
     order: OrderDto;
-    currentUser: { name: string; role: string };
+    currentUser: { id: number; name: string; surname?: string; role: string };
     onUpdate: (updatedOrder: OrderDto) => void;
 }
 
@@ -53,6 +53,24 @@ export default function EditOrderModal({
         courseType: order.course_type || "",
         courseFormat: order.course_format || "",
     });
+
+    useEffect(() => {
+        setForm({
+            groupId: order.group?.id || null,
+            groupName: order.group?.name || "",
+            name: order.name || "",
+            surname: order.surname || "",
+            email: order.email || "",
+            phone: order.phone || "",
+            age: order.age?.toString() || "",
+            status: order.status || "",
+            sum: order.sum?.toString() || "",
+            alreadyPaid: order.alreadyPaid?.toString() || "",
+            course: order.course || "",
+            courseType: order.course_type || "",
+            courseFormat: order.course_format || "",
+        });
+    }, [order]);
 
     const [groups, setGroups] = useState<{id: number; name: string}[]>([]);
     const [selectOpen, setSelectOpen] = useState(false);
@@ -120,7 +138,7 @@ export default function EditOrderModal({
         }
 
         try {
-            const updatedOrder = await OrdersService.updateOrder(order.id, updatedData, currentUser);
+            const updatedOrder = await OrdersService.updateOrder(order.id, updatedData);
             onUpdate(updatedOrder);
             onClose();
         } catch (err) {
@@ -129,7 +147,8 @@ export default function EditOrderModal({
         }
     };
 
-    const canEdit = !order.manager || order.manager === currentUser.name;
+    const canEdit = !order.managerUser?.id || order.managerUser.id === currentUser.id;
+    //const canEdit = !order.manager || order.manager === currentUser.name;
     if (!canEdit) return null;
 
     return (

@@ -14,6 +14,10 @@ import { AuthUser } from '../auth/interfaces/auth-user.interface';
 import { OrdersFilterBuilder } from './utils/orders-filter.builder';
 import { OrdersManagerFilter } from './utils/orders-manager.filter';
 
+type StatsOwner = 'admin' | 'managers';
+const isStatsOwner = (value: unknown): value is StatsOwner =>
+  value === 'admin' || value === 'managers';
+
 @Injectable()
 export class OrdersService {
   private static readonly SORTABLE_COLUMNS: (keyof OrdersEntity)[] = [
@@ -55,27 +59,22 @@ export class OrdersService {
         managerId,
       } = query;
 
-      console.log('=== findPaginated START ===');
-      console.log('Raw query object:', query);
-      console.log('Parsed values:', {
-        page,
-        take,
-        sortBy,
-        order,
-        onlyMy: onlyMy !== undefined ? String(onlyMy) : undefined,
-        managerId,
-        userRole: user.role,
-        userId: user.id,
-      });
+      // console.log('Parsed values:', {
+      //   page,
+      //   take,
+      //   sortBy,
+      //   order,
+      //   onlyMy: onlyMy !== undefined ? String(onlyMy) : undefined,
+      //   managerId,
+      //   userRole: user.role,
+      //   userId: user.id,
+      // });
 
       const qb = this.orderRepository
         .createQueryBuilder('o')
         .leftJoinAndSelect('o.group', 'group')
-        .leftJoin('o.managerUser', 'manager');
-      //.leftJoinAndSelect('o.managerUser', 'manager');
-
-      // Лог після створення базового query builder (до фільтрів)
-      console.log('Base SQL (before filters):', qb.getQueryAndParameters());
+        .leftJoinAndSelect('o.managerUser', 'manager');
+      //.leftJoin('o.managerUser', 'manager');
 
       OrdersFilterBuilder.apply(qb, query);
 
@@ -89,16 +88,9 @@ export class OrdersService {
       // Сортування
       qb.orderBy(`o.${sortBy}`, order);
 
-      // Перевірка на ILIKE (якщо все ще з'являється — побачимо)
-      if (qb.getQuery().toUpperCase().includes('ILIKE')) {
-        console.error(
-          '!!! ILIKE ВСЕ ЩЕ ПРИСУТНІЙ В SQL! Перевір код фільтрів.',
-        );
-      }
-
       // Пагінація
       qb.skip((page - 1) * take).take(take);
-      console.log('SQL before execution:', qb.getQueryAndParameters());
+
       const [items, total] = await qb.getManyAndCount();
 
       return {
@@ -170,7 +162,7 @@ export class OrdersService {
       // Шукаємо замовлення з усіма потрібними relations
       const order = await this.orderRepository.findOne({
         where: { id }, // саме так правильно для TypeORM v0.3.x
-        relations: ['group'],
+        relations: ['group', 'managerUser'],
       });
 
       if (!order) {
@@ -193,7 +185,8 @@ export class OrdersService {
     id: number,
     dto: Partial<OrdersEntity>,
     userRole: 'admin' | 'manager',
-    userName: string,
+    //userName: string,
+    userId: number,
   ): Promise<OrdersEntity> {
     const order = await this.orderRepository.findOne({
       where: { id },
@@ -205,39 +198,54 @@ export class OrdersService {
     }
     let statusExplicitlySetToNew = false;
     // менеджер не може міняти чужу заявку
-    if (userRole === 'manager') {
-      if (order.managerUser && order.managerUser.name !== userName) {
-        throw new ForbiddenException('Ви не можете змінювати цю заявку');
-      }
+
+    console.log({
+      orderId: order.id,
+      orderManagerId: order.managerUser?.id,
+      currentUserId: userId,
+      role: userRole,
+    });
+
+    const isOwner = order.managerUser?.id === userId;
+    if (order.managerUser && !isOwner) {
+      // if (order.managerUser?.id && order.managerUser.id !== userId) {
+      //if (order.managerUser && order.managerUser.name !== userName) {
+      throw new ForbiddenException('Ви не можете змінювати цю заявку');
     }
 
-    //  1. якщо статус New → знімаємо менеджера
-    if (dto.status === 'New' && order.status !== 'New') {
+    //  якщо статус New → знімаємо менеджера
+    if (
+      dto.status === 'New' &&
+      order.status !== 'New'
+      //order.managerUser?.id === userId
+    ) {
       order.status = 'New';
       order.managerUser = null;
       order.manager = null;
       statusExplicitlySetToNew = true;
     }
-    // Звичайне оновлення полів (крім спеціальних)
-    //Object.assign(order, dto);
-    const { status, manager, managerUser, group, groupName, ...safeFields } =
-      dto;
+
+    const {
+      status: _status,
+      manager: _manager,
+      managerUser: _managerUser,
+      group: _group,
+      groupName: _groupName,
+      ...safeFields
+    } = dto;
     Object.assign(order, safeFields);
 
     // Якщо заявка була без менеджера і редагує саме менеджер → призначаємо його
-    if (
-      userRole === 'manager' &&
-      !order.managerUser &&
-      //(!order.status || order.status === 'New') &&
-      !statusExplicitlySetToNew
-    ) {
-      const manager = await this.userRepository.findOne({
-        where: { name: userName, role: 'manager' },
+    if (!order.managerUser && !statusExplicitlySetToNew) {
+      const manager = await this.userRepository.findOneBy({
+        id: userId,
       });
+      //where: { name: userName, role: 'manager' },
 
       if (manager) {
         order.managerUser = manager;
-        order.manager = userName; // синхронізуємо строкове поле
+        order.manager = `${manager.name} ${manager.surname}`;
+
         // Якщо статус був New або відсутній → переводимо в роботу
         if (!order.status || order.status === 'New') {
           order.status = 'In work';
@@ -263,41 +271,60 @@ export class OrdersService {
     return await this.orderRepository.save(order);
   }
 
-  async updateStatus(id: number, status: string) {
-    const order = await this.orderRepository.findOneBy({ id });
+  async updateStatus(id: number, status: string, userId: number) {
+    const order = await this.orderRepository.findOne({
+      where: { id },
+      relations: ['managerUser'],
+    });
+
     if (!order) {
       throw new NotFoundException(`Order with id ${id} not found`);
+    }
+    if (status === 'New') {
+      order.managerUser = null;
+      order.manager = null;
     }
 
     order.status = status;
     return await this.orderRepository.save(order);
   }
 
-  async addComment(
-    orderId: number,
-    author: string,
-    text: string,
-    isAdmin = false,
-  ) {
-    const order = await this.orderRepository.findOneBy({ id: orderId });
+  async addComment(orderId: number, userId: number, text: string) {
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+      relations: ['managerUser'],
+    });
     if (!order) {
       throw new NotFoundException(`Order with id ${orderId} not found`);
     }
 
-    if (!isAdmin) {
-      if (order.manager && order.manager !== author) {
-        throw new ForbiddenException(`Ви не можете коментувати цю заявку`);
-      }
-      if (!order.manager) {
-        order.manager = author;
-      }
+    const user = await this.userRepository.findOneBy({
+      id: userId,
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with id=${userId} not found`);
+    }
+
+    if (order.managerUser && order.managerUser.id !== Number(userId)) {
+      throw new ForbiddenException(`Ви не можете коментувати цю заявку`);
+    }
+
+    if (!order.managerUser) {
+      order.managerUser = user;
+      order.manager = `${user.name} ${user.surname}`;
+
       //Якщо статус null або "New" → ставимо "In work"
       if (!order.status || order.status === 'New') {
         order.status = 'In work';
       }
     }
 
-    const newComment = { author, text, createdAt: new Date().toISOString() };
+    const newComment = {
+      author: `${user.name} ${user.surname}`,
+      text,
+      createdAt: new Date().toISOString(),
+    };
 
     // Додаємо коментар у масив
     order.comments = order.comments
@@ -371,30 +398,25 @@ export class OrdersService {
   async getStatistics(): Promise<Record<string, number>> {
     const rawStatuses = await this.orderRepository
       .createQueryBuilder('order')
-      .select(
-        "LOWER(COALESCE(NULLIF(order.status, ''), 'без статусу'))",
-        'status',
-      )
+      .select("LOWER(COALESCE(NULLIF(order.status, ''), 'new'))", 'status')
       .addSelect('COUNT(order.id)', 'count')
-      .groupBy("LOWER(COALESCE(NULLIF(order.status, ''), 'без статусу'))")
+      .groupBy("LOWER(COALESCE(NULLIF(order.status, ''), 'new'))")
       .getRawMany<{ status: string; count: string }>();
 
-    // Нормалізація назв для красивого відображення на фронті
     const prettyNames: Record<string, string> = {
       new: 'New',
       'in work': 'In work',
       agree: 'Agree',
       disaggre: 'Disagree',
       dubbing: 'Dubbing',
-      'без статусу': 'Без статусу',
     };
 
     const result: Record<string, number> = {};
 
     rawStatuses.forEach(({ status, count }) => {
-      const clean = status?.trim().toLowerCase() || 'без статусу';
+      const clean = status?.trim().toLowerCase() || 'new';
       const key = prettyNames[clean] || clean;
-      result[key] = (result[key] || 0) + parseInt(count, 10);
+      result[key] = Number(count);
     });
 
     return result;
@@ -412,30 +434,34 @@ export class OrdersService {
 
     for (const manager of managers) {
       manager['totalOrders'] = await this.orderRepository.count({
-        where: { manager: manager.name }, // заявки привязаны по имени
+        where: {
+          managerUser: { id: manager.id },
+        },
       });
     }
 
     return managers;
   }
 
-  async assignManager(id: number, managerName: string) {
+  async assignManager(id: number, managerId: number) {
+    //managerName: string
     const order = await this.orderRepository.findOneBy({ id });
     if (!order) {
       throw new NotFoundException(`Order with id ${id} not found`);
     }
 
-    const manager = await this.userRepository.findOne({
-      where: { name: managerName, role: 'manager' },
+    const manager = await this.userRepository.findOneBy({
+      id: managerId,
     });
     if (!manager) {
       throw new NotFoundException('Manager not found');
     }
-    order.manager = manager.name;
+    order.manager = `${manager.name} ${manager.surname}`;
+    //order.manager = manager.name;
     order.managerUser = manager;
 
     if (!order.status || order.status === 'New') {
-      order.status = 'In Work';
+      order.status = 'In work';
     }
     await this.orderRepository.save(order);
     return order;

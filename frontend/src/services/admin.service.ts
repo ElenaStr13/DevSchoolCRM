@@ -1,8 +1,9 @@
 import api from '../api/axios';
 import {Manager} from "../types/manager.type";
+import {OrdersStatistics} from "../types/orders-statistics.type";
 
 export class AdminService {
-    static async getStatistics(): Promise<Record<string, number>> {
+    static async getStatistics(): Promise<OrdersStatistics> {
         const res = await api.get('/orders/statistics');
         return res.data;
     }

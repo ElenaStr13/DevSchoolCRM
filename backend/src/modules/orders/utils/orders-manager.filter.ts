@@ -14,6 +14,9 @@ export class OrdersManagerFilter {
       qb.andWhere('manager.id = :managerId', { managerId });
       return;
     }
+    // if (user.role === 'manager' || (user.role === 'admin' && onlyMy)) {
+    //   qb.andWhere('o.managerUserId = :userId', { userId: user.id });
+    // }
 
     //OnlyMy — для будь-якої ролі
     if (onlyMy === true) {

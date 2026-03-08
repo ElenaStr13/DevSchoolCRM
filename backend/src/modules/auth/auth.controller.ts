@@ -24,6 +24,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
+  @Public()
   async login(@Body() loginDto: LoginDto): Promise<ITokens> {
     return this.authService.login(loginDto);
   }
@@ -38,14 +39,15 @@ export class AuthController {
   }
 
   @Post('set-password')
+  @Public()
   async setPassword(@Body() dto: SetPasswordDto) {
     return this.authService.setPassword(dto);
   }
 
   @Post('refresh')
-  @ApiBody({ type: RefreshDto })
-  async refresh(@Body() body: RefreshDto): Promise<ITokens> {
-    return this.authService.refresh(body.refreshToken);
+  @Public()
+  async refresh(@Body('refreshToken') refreshToken: string) {
+    return this.authService.refresh(refreshToken);
   }
 
   @Get('me')

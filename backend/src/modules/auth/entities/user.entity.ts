@@ -34,10 +34,6 @@ export class UserEntity {
   tokens: TokenEntity[];
 
   async validatePassword(password: string): Promise<boolean> {
-    console.log('VALIDATE PASSWORD DEBUG:');
-    console.log('  Введений:', password);
-    console.log('  Хеш у БД:', this.password);
-    console.log('  Тип хешу:', typeof this.password);
     if (!this.password) {
       return false;
     }

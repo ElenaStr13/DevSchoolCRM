@@ -6,39 +6,31 @@ import OrdersPage from "../pages/OrdersPage";
 import { createBrowserRouter } from 'react-router-dom';
 import AdminPage from "../pages/AdminPage";
 import ActivatePage from "../pages/ActivatePage";
+import  PrivateRoute  from '../components/PrivateRoute';
 
 const router = createBrowserRouter([
     {
         path: '/',
-        element: <Navigate to="/login" replace />, // Редірект з кореня на /login
+        element: (
+            <PrivateRoute>
+                <PrivateLayout />
+            </PrivateRoute>
+        ),
+        children: [
+            { index: true, element: <Navigate to="orders" replace /> },
+            { path: 'groups', element: <GroupsPage /> },
+            { path: 'orders', element: <OrdersPage /> },
+            { path: 'admin', element: <AdminPage /> },
+            //{ path: 'activate/:token', element: <ActivatePage /> },
+        ],
     },
     {
         path: '/login',
-        element: <LoginPage />, // Сторінка логіна
+        element: <LoginPage />,
     },
     {
-        path: '/',
-        element: <PrivateLayout />, // Використовуємо PrivateLayout як основу
-        errorElement: <h1>Error</h1>,
-        children: [
-            {
-                path: '/groups',
-                element: <GroupsPage />,
-            },
-
-            {
-                path: '/orders',
-                element: <OrdersPage />,
-            },
-            {
-                path: '/admin',
-                element: <AdminPage />,
-            },
-            {
-                path: '/activate/:token',
-                element: <ActivatePage />,
-            },
-        ],
+        path: '/activate/:token',
+        element: <ActivatePage />,
     },
 ]);
 
