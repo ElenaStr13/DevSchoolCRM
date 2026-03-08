@@ -106,9 +106,6 @@ export class OrdersController {
     @Req() req: AuthRequest,
   ) {
     return this.ordersService.addComment(id, req.user.id, dto.text);
-    // const { user } = req;
-    // const isAdmin = user.role === 'admin';
-    // return this.ordersService.addComment(id, user.name, dto.text, isAdmin);
   }
 
   @Patch(':id')
@@ -121,7 +118,6 @@ export class OrdersController {
     const { user } = req;
     console.log('REQ.USER IN UPDATE:', req.user);
     return this.ordersService.update(id, dto, user.role, user.id);
-    //return this.ordersService.update(id, dto, user.role, user.name);
   }
 
   @Patch(':id/status')
@@ -133,16 +129,4 @@ export class OrdersController {
   ) {
     return this.ordersService.updateStatus(id, dto.status, req.user.id);
   }
-
-  // @Patch(':id/comment')
-  // @Roles('admin', 'manager')
-  // async addComment(
-  //   @Param('id') id: number,
-  //   @Body() dto: AddCommentDto,
-  //   @Req() req: AuthRequest, // тут беремо поточного користувача
-  // ) {
-  //   //const { user } = req; // наприклад user.name або user.username
-  //   //const isAdmin = user.role === 'admin';
-  //   return this.ordersService.addComment(id, req.user.id, dto.text);
-  // }
 }
