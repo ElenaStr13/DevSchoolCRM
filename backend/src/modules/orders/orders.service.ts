@@ -294,47 +294,63 @@ export class OrdersService {
       where: { id: orderId },
       relations: ['managerUser'],
     });
+
     if (!order) {
       throw new NotFoundException(`Order with id ${orderId} not found`);
     }
 
-    const user = await this.userRepository.findOneBy({
-      id: userId,
-    });
+    const user = await this.userRepository.findOneBy({ id: userId });
 
     if (!user) {
       throw new NotFoundException(`User with id=${userId} not found`);
     }
 
-    if (order.managerUser && order.managerUser.id !== Number(userId)) {
-      throw new ForbiddenException(`Ви не можете коментувати цю заявку`);
+    const currentUserFullName = `${user.name} ${user.surname}`.trim();
+    const managerName = order.manager?.trim() || '';
+
+    const hasOwner = !!order.managerUser || !!managerName;
+    const isOwnerById = order.managerUser?.id === userId;
+    const isOwnerByName = managerName === currentUserFullName;
+    const isOwner = isOwnerById || isOwnerByName;
+    const isFree = !hasOwner;
+
+    console.log('ADD COMMENT CHECK', {
+      orderId: order.id,
+      manager: order.manager,
+      managerUserId: order.managerUser?.id,
+      currentUserId: userId,
+      currentUserFullName,
+      isFree,
+      isOwner,
+    });
+
+    if (!isFree && !isOwner) {
+      throw new ForbiddenException(
+        'Ви можете коментувати тільки свої або нічийні заявки',
+      );
     }
 
-    if (!order.managerUser) {
+    if (isFree) {
       order.managerUser = user;
-      order.manager = `${user.name} ${user.surname}`;
+      order.manager = currentUserFullName;
 
-      //Якщо статус null або "New" → ставимо "In work"
       if (!order.status || order.status === 'New') {
         order.status = 'In work';
       }
     }
 
     const newComment = {
-      author: `${user.name} ${user.surname}`,
+      author: currentUserFullName,
       text,
       createdAt: new Date().toISOString(),
     };
 
-    // Додаємо коментар у масив
-    order.comments = order.comments
+    order.comments = Array.isArray(order.comments)
       ? [...order.comments, newComment]
       : [newComment];
 
-    // Зберігаємо замовлення
     await this.orderRepository.save(order);
 
-    // Повертаємо **новий коментар**, а не весь order
     return newComment;
   }
 

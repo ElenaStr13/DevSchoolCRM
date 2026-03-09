@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Box, Typography, TextField, Button, Paper, Divider } from "@mui/material";
 import { OrderDto } from "../../dto/order.dto";
 import "./OrderDetails.css";
 
@@ -21,8 +20,8 @@ export default function OrderDetails({ order, currentUser, onAddComment, onEditO
 
     const isOwner = managerUserId === currentUserId;
 
-    const canEdit = !managerUserId || isOwner || currentUser.role === "admin";
-    const canComment = !managerUserId || isOwner || currentUser.role === "admin";
+    const canEdit = !managerUserId || isOwner ;
+    const canComment = !managerUserId || isOwner ;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

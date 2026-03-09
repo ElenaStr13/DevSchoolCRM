@@ -11,7 +11,6 @@ import Pagination from "../../components/Pagination/Pagination";
 import OrderDetails from "../../components/OrdersDetails/OrderDetails";
 import EditOrderModal from "../../components/Edit/EditOrderModal";
 import OrdersFilter from "../../components/OrdersFilter/OrdersFilter";
-import { AdminService } from "../../services/admin.service";
 import {Manager} from "../../types/manager.type";
 import { useNavigate } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
@@ -32,7 +31,6 @@ export default function Orders() {
     const detailsRef = useRef<HTMLDivElement | null>(null);
     const currentUserRaw = JSON.parse(localStorage.getItem("user") || "{}");
     const currentUser = { ...currentUserRaw, id: Number(currentUserRaw.id) };
-    //const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
     const [editOpen, setEditOpen] = useState(false);
 
 
@@ -42,7 +40,7 @@ export default function Orders() {
 
     const totalPages = Math.ceil(total / take);
 
-        // Завантаження заявок
+    // Завантаження заявок
     useEffect(() => {
         const fetchOrders = async () => {
             try {
@@ -56,10 +54,6 @@ export default function Orders() {
 
                 // const response = await OrdersService.findPaginated(query);
                 const { data, totalCount } = await OrdersService.findPaginated(query);
-
-
-                // setOrders(response.item);
-                // setTotal(response.total);
 
                 setOrders(data);
                 setTotal(totalCount);
@@ -108,30 +102,42 @@ export default function Orders() {
     };
 
     // Додавання коментаря
-    const handleAddComment: (
+    const handleAddComment = async (
         orderId: number,
         text: string
-    ) => Promise<{ author: string; text: string; createdAt: string }> = async (
-        orderId,
-        text
-    ) => {
+    ): Promise<{ author: string; text: string; createdAt: string }> => {
         try {
-            // Викликаємо бекенд і отримуємо новий коментар
             const newComment = await OrdersService.addComment(orderId, text);
 
-            // Додаємо новий коментар у локальний selectedOrder
             if (selectedOrder?.id === orderId) {
-                setSelectedOrder(prev => ({
-                    ...prev!,
-                    comments: prev?.comments ? [...prev.comments, newComment] : [newComment],
-                }));
+                setSelectedOrder(prev =>
+                    prev
+                        ? {
+                            ...prev,
+                            comments: prev.comments
+                                ? [...prev.comments, newComment]
+                                : [newComment],
+                            managerUser: prev.managerUser || {
+                                id: currentUser.id,
+                                name: currentUser.name,
+                                surname: currentUser.surname ?? "",
+                            },
+                            manager:
+                                prev.manager ||
+                                `${currentUser.name} ${currentUser.surname ?? ""}`.trim(),
+                            status:
+                                !prev.status || prev.status === "New"
+                                    ? "In work"
+                                    : prev.status,
+                        }
+                        : prev
+                );
             }
 
-            // Повертаємо новий коментар для OrderDetails
             return newComment;
         } catch (err) {
             console.error("Помилка додавання коментаря:", err);
-            return { author: "Unknown", text, createdAt: new Date().toISOString() };
+            throw err;
         }
     };
 
@@ -148,35 +154,7 @@ export default function Orders() {
         setEditOpen(true);
     };
 
-    //список менеджерів
-    // useEffect(() => {
-    //     const fetchManagers = async () => {
-    //         try {
-    //             const data = await AdminService.getAllManagers();
-    //             setManagersList(data);
-    //         } catch (e) {
-    //             console.error("Помилка завантаження менеджерів:", e);
-    //         }
-    //     };
-    //
-    //     if (currentUser.role === "admin") {
-    //         fetchManagers();
-    //     }
-    // }, []);
 
-    // const handleAssignManager = async (orderId: number, managerName: string) => {
-    //     try {
-    //         await OrdersService.assignManager(orderId, managerName);
-    //
-    //         setOrders(prevOrders =>
-    //             prevOrders.map(order =>
-    //                 order.id === orderId ? { ...order, manager: managerName } : order
-    //             )
-    //         );
-    //     } catch (error) {
-    //         console.error("Помилка призначення менеджера:", error);
-    //     }
-    // };
 
     const handleFilterChange = (newFilters: Record<string, any>) => {
 
