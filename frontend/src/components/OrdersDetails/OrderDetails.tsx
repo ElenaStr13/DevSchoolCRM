@@ -83,7 +83,6 @@ export default function OrderDetails({ order, currentUser, onAddComment, onEditO
       ? `${orderState.managerUser.name} ${orderState.managerUser.surname ?? ""}`.trim()
       : (orderState.manager || "—")}
 </span>
-                    {/*<span className="details-value">{orderState.manager || "—"}</span>*/}
                 </div>
             </div>
 

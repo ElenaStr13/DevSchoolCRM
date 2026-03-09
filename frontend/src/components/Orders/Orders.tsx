@@ -52,7 +52,7 @@ export default function Orders() {
                     ...filters,
                 };
 
-                // const response = await OrdersService.findPaginated(query);
+
                 const { data, totalCount } = await OrdersService.findPaginated(query);
 
                 setOrders(data);
